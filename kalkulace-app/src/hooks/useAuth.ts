@@ -58,6 +58,7 @@ export function useAuth(): AuthState {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
+        redirectTo: window.location.origin + window.location.pathname,
         queryParams: {
           hd: 'svejda-goldmann.cz', // Hint for Google to show only this domain
         },
