@@ -4,6 +4,7 @@ import type {
   ScreenComplexityCalibration,
   BillableProductDefinition,
 } from '../types';
+import { COMPLEXITY_LEVELS, COMPLEXITY_PERCENTAGES } from '../types';
 import { formatDecimal } from '../lib/formatting';
 import { CatalogList } from './CatalogList';
 import { CatalogDetail } from './CatalogDetail';
@@ -181,6 +182,26 @@ export function GlobalSettingsPanel({
                 ))}
               </tbody>
             </table>
+
+            <h3 style={{ marginTop: 24 }}>Procenta složitosti</h3>
+            <table className="table table-small">
+              <thead>
+                <tr>
+                  <th>Složitost</th>
+                  {COMPLEXITY_LEVELS.map((l) => (
+                    <th key={l} style={{ textAlign: 'center' }}>{l}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Procento z báze</td>
+                  {COMPLEXITY_LEVELS.map((l) => (
+                    <td key={l} style={{ textAlign: 'center' }}>{Math.round(COMPLEXITY_PERCENTAGES[l] * 100)} %</td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
           </div>
         )}
 
@@ -208,7 +229,37 @@ export function GlobalSettingsPanel({
         {activeTab === 'markdown' && (
           <div className="settings-section">
             <h3>Nastavení Markdown výstupu</h3>
-            <p className="empty-state">Zatím bez nastavení.</p>
+            <div className="field" style={{ marginBottom: 16 }}>
+              <label>Dodavatel</label>
+              <textarea
+                value={local.md_supplier_info}
+                onChange={(e) => update('md_supplier_info', e.target.value)}
+                rows={5}
+              />
+            </div>
+            <div className="field" style={{ marginBottom: 16 }}>
+              <label>Kontakty</label>
+              <textarea
+                value={local.md_contacts}
+                onChange={(e) => update('md_contacts', e.target.value)}
+                rows={4}
+              />
+            </div>
+            <div className="field" style={{ marginBottom: 16 }}>
+              <label>Reference</label>
+              <textarea
+                value={local.md_references}
+                onChange={(e) => update('md_references', e.target.value)}
+                rows={3}
+              />
+            </div>
+            <button
+              onClick={handleSave}
+              className="btn btn-primary"
+              disabled={saving}
+            >
+              {saving ? 'Ukládání...' : 'Uložit nastavení'}
+            </button>
           </div>
         )}
       </div>

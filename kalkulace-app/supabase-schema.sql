@@ -13,7 +13,14 @@ create table global_settings (
   default_pm_percent numeric not null default 8,
   default_sla_monthly_fee numeric not null default 900,
   default_first_mobile_set boolean not null default false,
-  default_days_to_start integer not null default 14
+  default_days_to_start integer not null default 14,
+  md_supplier_info text not null default '**Švejda & Goldmann s.r.o.**
+Sídlo: Karlovo náměstí 290/16, 120 00 Praha 2
+IČO: 09831193
+DIČ: CZ09831193',
+  md_contacts text not null default '- Jan Švejda — jan@svejda-goldmann.cz
+- Jakub Goldmann — jakub@svejda-goldmann.cz',
+  md_references text not null default 'Vybrané projekty na vyžádání.'
 );
 
 -- Insert default settings row
@@ -139,4 +146,11 @@ create policy "authenticated_access" on project_billable_items for all using (au
 -- Run this if the table already exists:
 -- ALTER TABLE billable_product_definitions ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT '';
 -- ALTER TABLE projects ADD COLUMN IF NOT EXISTS project_code text NOT NULL DEFAULT '';
+-- ALTER TABLE global_settings ADD COLUMN IF NOT EXISTS md_supplier_info text NOT NULL DEFAULT '**Švejda & Goldmann s.r.o.**
+-- Sídlo: Karlovo náměstí 290/16, 120 00 Praha 2
+-- IČO: 09831193
+-- DIČ: CZ09831193';
+-- ALTER TABLE global_settings ADD COLUMN IF NOT EXISTS md_contacts text NOT NULL DEFAULT '- Jan Švejda — jan@svejda-goldmann.cz
+-- - Jakub Goldmann — jakub@svejda-goldmann.cz';
+-- ALTER TABLE global_settings ADD COLUMN IF NOT EXISTS md_references text NOT NULL DEFAULT 'Vybrané projekty na vyžádání.';
 -- ============================================================

@@ -12,6 +12,9 @@ export interface GlobalSettings {
   default_sla_monthly_fee: number;
   default_first_mobile_set: boolean;
   default_days_to_start: number;
+  md_supplier_info: string;
+  md_contacts: string;
+  md_references: string;
 }
 
 // --- Screen Complexity Calibration ---

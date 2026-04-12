@@ -4,6 +4,7 @@ import type {
   ProjectScreen,
   ProjectBillableItem,
   BillableProductDefinition,
+  GlobalSettings,
 } from '../types';
 import type { ProjectSummary } from '../lib/calculations';
 import { generateMarkdown } from '../lib/markdown';
@@ -14,6 +15,7 @@ interface Props {
   billableItems: ProjectBillableItem[];
   definitions: BillableProductDefinition[];
   summary: ProjectSummary;
+  settings: GlobalSettings;
 }
 
 export function MarkdownOutput({
@@ -22,6 +24,7 @@ export function MarkdownOutput({
   billableItems,
   definitions,
   summary,
+  settings,
 }: Props) {
   const [copied, setCopied] = useState(false);
 
@@ -33,8 +36,9 @@ export function MarkdownOutput({
         billableItems,
         definitions,
         summary,
+        settings,
       }),
-    [project, screens, billableItems, definitions, summary],
+    [project, screens, billableItems, definitions, summary, settings],
   );
 
   async function handleCopy() {

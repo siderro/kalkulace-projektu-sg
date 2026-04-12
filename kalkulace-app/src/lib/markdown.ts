@@ -7,6 +7,7 @@ import {
   type ProjectScreen,
   type ProjectBillableItem,
   type BillableProductDefinition,
+  type GlobalSettings,
   type SectionKey,
   SECTION_LABELS,
 } from '../types';
@@ -19,13 +20,14 @@ export interface MarkdownInput {
   billableItems: ProjectBillableItem[];
   definitions: BillableProductDefinition[];
   summary: ProjectSummary;
+  settings: GlobalSettings;
 }
 
 /**
  * Generate the complete Czech Markdown offer from project data.
  */
 export function generateMarkdown(input: MarkdownInput): string {
-  const { project, screens, billableItems, definitions, summary } = input;
+  const { project, screens, billableItems, definitions, summary, settings } = input;
 
   const defMap = new Map(definitions.map((d) => [d.id, d]));
 
@@ -48,36 +50,14 @@ export function generateMarkdown(input: MarkdownInput): string {
   // 3. Project name
   sections.push(`## ${project.name}`);
 
-  // 4. Company information
-  sections.push(
-    [
-      `### Dodavatel`,
-      ``,
-      `**Švejda & Goldmann s.r.o.**`,
-      `Sídlo: Karlovo náměstí 290/16, 120 00 Praha 2`,
-      `IČO: 09831193`,
-      `DIČ: CZ09831193`,
-    ].join('\n'),
-  );
+  // 4. Company information (from settings)
+  sections.push(`### Dodavatel\n\n${settings.md_supplier_info}`);
 
-  // 5. Contacts
-  sections.push(
-    [
-      `### Kontakty`,
-      ``,
-      `- Jan Švejda — jan@svejda-goldmann.cz`,
-      `- Jakub Goldmann — jakub@svejda-goldmann.cz`,
-    ].join('\n'),
-  );
+  // 5. Contacts (from settings)
+  sections.push(`### Kontakty\n\n${settings.md_contacts}`);
 
-  // 6. Reference projects
-  sections.push(
-    [
-      `### Reference`,
-      ``,
-      `Vybrané projekty na vyžádání.`,
-    ].join('\n'),
-  );
+  // 6. Reference projects (from settings)
+  sections.push(`### Reference\n\n${settings.md_references}`);
 
   // 7. Management summary — scope list from enabled items
   const scopeLines = enabledDefs.map(({ def }) => `- ${def.label}`);

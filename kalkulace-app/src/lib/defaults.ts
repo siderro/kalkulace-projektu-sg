@@ -16,6 +16,9 @@ export const DEFAULT_GLOBAL_SETTINGS: Omit<GlobalSettings, 'id'> = {
   default_sla_monthly_fee: 900,
   default_first_mobile_set: false,
   default_days_to_start: 14,
+  md_supplier_info: `**Švejda & Goldmann s.r.o.**\nSídlo: Karlovo náměstí 290/16, 120 00 Praha 2\nIČO: 09831193\nDIČ: CZ09831193`,
+  md_contacts: `- Jan Švejda — jan@svejda-goldmann.cz\n- Jakub Goldmann — jakub@svejda-goldmann.cz`,
+  md_references: `Vybrané projekty na vyžádání.`,
 };
 
 // --- Calibration defaults (base MD at complexity 5) ---

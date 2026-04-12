@@ -228,6 +228,7 @@ export default function App() {
             billableItems={billableItems}
             definitions={globals.definitions}
             summary={summary}
+            settings={globals.settings}
           />
         )}
       </main>
