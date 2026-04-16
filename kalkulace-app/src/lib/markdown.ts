@@ -60,15 +60,19 @@ export function generateMarkdown(input: MarkdownInput): string {
   sections.push(`### Reference\n\n${settings.md_references}`);
 
   // 7. Management summary — scope list from enabled items
-  const scopeLines = enabledDefs.map(({ def }) => `- ${def.label}`);
+  const scopeBlocks = enabledDefs.flatMap(({ def }) => [
+    `#### ${def.label}`,
+    ``,
+    ...(def.description ? [def.description, ``] : []),
+  ]);
   sections.push(
     [
       `### Rozsah projektu`,
       ``,
       `Cenový odhad zahrnuje:`,
       ``,
-      ...scopeLines,
-    ].join('\n'),
+      ...scopeBlocks,
+    ].join('\n').trimEnd(),
   );
 
   // 8. Scope summary

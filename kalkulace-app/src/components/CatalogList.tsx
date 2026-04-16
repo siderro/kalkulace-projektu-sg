@@ -16,12 +16,43 @@ const SECTION_ORDER: SectionKey[] = [
   'programming',
 ];
 
+function exportCatalogMd(definitions: BillableProductDefinition[]) {
+  const lines: string[] = ['# Katalog fakturovatelných položek', ''];
+
+  for (const sk of SECTION_ORDER) {
+    const items = definitions
+      .filter((d) => d.section_key === sk && d.active)
+      .sort((a, b) => a.sort_order - b.sort_order);
+    if (items.length === 0) continue;
+
+    lines.push(`## ${SECTION_LABELS[sk]}`, '');
+    for (const item of items) {
+      lines.push(`### ${item.label}`);
+      if (item.description) {
+        lines.push('', item.description);
+      }
+      lines.push('');
+    }
+  }
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'katalog-polozek.md';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function CatalogList({ definitions, onEdit, onNew, onDelete, onReorder }: Props) {
   return (
     <div className="catalog-list">
       <div className="catalog-list-header">
         <h3>Katalog fakturovatelných položek</h3>
-        <button onClick={onNew} className="btn btn-primary">+ Nová položka</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => exportCatalogMd(definitions)} className="btn">Export MD</button>
+          <button onClick={onNew} className="btn btn-primary">+ Nová položka</button>
+        </div>
       </div>
 
       {SECTION_ORDER.map((sk) => {
