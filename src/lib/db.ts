@@ -168,6 +168,48 @@ export async function deleteProject(id: string): Promise<void> {
   if (error) console.error('deleteProject:', error);
 }
 
+export async function duplicateProject(projectId: string): Promise<string | null> {
+  const [project, screens, items] = await Promise.all([
+    fetchProject(projectId),
+    fetchProjectScreens(projectId),
+    fetchProjectBillableItems(projectId),
+  ]);
+  if (!project) return null;
+
+  const newProjectId = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  const newProject: Project = {
+    ...project,
+    id: newProjectId,
+    name: `Kopie – ${project.name}`,
+    created_at: now,
+    updated_at: now,
+  };
+
+  const newScreens: ProjectScreen[] = screens.map((s) => ({
+    ...s,
+    id: crypto.randomUUID(),
+    project_id: newProjectId,
+  }));
+
+  const newItems: ProjectBillableItem[] = items.map((i) => ({
+    ...i,
+    id: crypto.randomUUID(),
+    project_id: newProjectId,
+  }));
+
+  await upsertProject(newProject);
+  if (newScreens.length > 0) {
+    await saveProjectScreens(newProjectId, newScreens);
+  }
+  if (newItems.length > 0) {
+    await saveProjectBillableItems(newProjectId, newItems);
+  }
+
+  return newProjectId;
+}
+
 // --- Project Screens ---
 
 export async function fetchProjectScreens(

@@ -7,6 +7,7 @@ interface Props {
   calibration: ScreenComplexityCalibration[];
   onAdd: () => void;
   onUpdate: (id: string, field: keyof ProjectScreen, value: unknown) => void;
+  onDuplicate: (id: string) => void;
   onRemove: (id: string) => void;
 }
 
@@ -18,7 +19,7 @@ const FLAG_KEYS: { key: keyof ProjectScreen; workType: WorkTypeKey }[] = [
   { key: 'webflow', workType: 'webflow' },
 ];
 
-export function Screens({ screens, calibration, onAdd, onUpdate, onRemove }: Props) {
+export function Screens({ screens, calibration, onAdd, onUpdate, onDuplicate, onRemove }: Props) {
   // Compute per-screen MD for display
   function computeScreenWorkTypeMd(
     complexity: number,
@@ -128,7 +129,14 @@ export function Screens({ screens, calibration, onAdd, onUpdate, onRemove }: Pro
                       className="input-inline input-note"
                     />
                   </td>
-                  <td>
+                  <td className="action-btns">
+                    <button
+                      className="btn btn-small"
+                      onClick={() => onDuplicate(screen.id)}
+                      title="Duplikovat"
+                    >
+                      Duplikovat
+                    </button>
                     <button
                       className="btn btn-small btn-danger"
                       onClick={() => onRemove(screen.id)}

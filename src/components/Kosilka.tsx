@@ -117,6 +117,7 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
         <div className="form-divider" />
 
         {field('SLA měsíční paušál (Kč)', 'sla_monthly_fee', 'number', String(settings.default_sla_monthly_fee), settings.default_sla_monthly_fee)}
+        {field('SLA počet měsíců', 'sla_months', 'number', '1', 1)}
         {field('Dní do zahájení', 'days_to_start', 'number', String(settings.default_days_to_start))}
         <div className="field">
           <label>Předpokládané zahájení <span className="default-hint">vypočteno</span></label>

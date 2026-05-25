@@ -204,6 +204,7 @@ export default function App() {
             calibration={globals.calibration}
             onAdd={projectState.addScreen}
             onUpdate={projectState.updateScreen}
+            onDuplicate={projectState.duplicateScreen}
             onRemove={projectState.removeScreen}
           />
         )}

@@ -88,6 +88,7 @@ create table projects (
   pm_percent numeric not null default 8,
   first_mobile_set boolean not null default false,
   sla_monthly_fee numeric not null default 900,
+  sla_months integer not null default 1,
   days_to_start integer not null default 14,
   expected_start_date date not null default (current_date + interval '14 days'),
   notes text not null default '',

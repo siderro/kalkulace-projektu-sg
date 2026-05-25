@@ -76,6 +76,7 @@ export interface Project {
   pm_percent: number;
   first_mobile_set: boolean;
   sla_monthly_fee: number;
+  sla_months: number;
   days_to_start: number;
   expected_start_date: string; // ISO date string, computed from days_to_start
   notes: string;

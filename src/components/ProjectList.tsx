@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Project } from '../types';
-import { fetchProjects, deleteProject } from '../lib/db';
+import { fetchProjects, deleteProject, duplicateProject } from '../lib/db';
 import { formatCzechDate } from '../lib/formatting';
 
 interface Props {
@@ -21,6 +21,11 @@ export function ProjectList({ onOpen, onNew }: Props) {
     const data = await fetchProjects();
     setProjects(data);
     setLoading(false);
+  }
+
+  async function handleDuplicate(id: string) {
+    await duplicateProject(id);
+    await loadProjects();
   }
 
   async function handleDelete(id: string, name: string) {
@@ -64,7 +69,13 @@ export function ProjectList({ onOpen, onNew }: Props) {
                 <td>{p.version_label}</td>
                 <td>{formatCzechDate(p.project_date)}</td>
                 <td>{new Date(p.updated_at).toLocaleString('cs-CZ')}</td>
-                <td>
+                <td className="action-btns">
+                  <button
+                    className="btn btn-small"
+                    onClick={() => handleDuplicate(p.id)}
+                  >
+                    Duplikovat
+                  </button>
                   <button
                     className="btn btn-small btn-danger"
                     onClick={() => handleDelete(p.id, p.name || 'Bez názvu')}

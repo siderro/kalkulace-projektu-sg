@@ -41,6 +41,7 @@ export interface ProjectState {
   setScreens: (screens: ProjectScreen[]) => void;
   addScreen: () => void;
   updateScreen: (id: string, field: keyof ProjectScreen, value: unknown) => void;
+  duplicateScreen: (id: string) => void;
   removeScreen: (id: string) => void;
 
   // Billable items
@@ -81,6 +82,7 @@ export function useProject(): ProjectState {
       project.complexity_coefficient_percent,
       project.pm_percent,
       project.sla_monthly_fee,
+      project.sla_months,
     );
   }, [project, billableItems]);
 
@@ -113,6 +115,7 @@ export function useProject(): ProjectState {
         pm_percent: settings.default_pm_percent,
         first_mobile_set: settings.default_first_mobile_set,
         sla_monthly_fee: settings.default_sla_monthly_fee,
+        sla_months: 1,
         days_to_start: settings.default_days_to_start,
         expected_start_date: computeExpectedStartDate(settings.default_days_to_start),
         notes: '',
@@ -174,11 +177,11 @@ export function useProject(): ProjectState {
       name: '',
       complexity: 3,
       note: '',
-      ux_primary_desktop: true,
+      ux_primary_desktop: false,
       ux_secondary_mobile: false,
-      ui_primary_desktop: true,
+      ui_primary_desktop: false,
       ui_secondary_mobile: false,
-      webflow: true,
+      webflow: false,
       sort_order: screens.length,
     };
     setScreensState((prev) => [...prev, newScreen]);
@@ -194,6 +197,21 @@ export function useProject(): ProjectState {
     },
     [],
   );
+
+  const duplicateScreen = useCallback((id: string) => {
+    setScreensState((prev) => {
+      const source = prev.find((s) => s.id === id);
+      if (!source) return prev;
+      const copy: ProjectScreen = {
+        ...source,
+        id: crypto.randomUUID(),
+        name: `Kopie – ${source.name}`,
+        sort_order: prev.length,
+      };
+      return [...prev, copy];
+    });
+    setDirty(true);
+  }, []);
 
   const removeScreen = useCallback((id: string) => {
     setScreensState((prev) => prev.filter((s) => s.id !== id));
@@ -324,6 +342,7 @@ export function useProject(): ProjectState {
     setScreens,
     addScreen,
     updateScreen,
+    duplicateScreen,
     removeScreen,
     setBillableItems,
     toggleItemEnabled,

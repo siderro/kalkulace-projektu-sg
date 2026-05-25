@@ -201,6 +201,7 @@ export function computeProjectSummary(
   complexityCoefficientPercent: number,
   pmPercent: number,
   slaMonthlyFee: number,
+  slaMonths: number,
 ): ProjectSummary {
   const billableSubtotal = computeBillableSubtotal(items);
   const adjustedSubtotal = computeAdjustedSubtotal(
@@ -211,7 +212,7 @@ export function computeProjectSummary(
   const totalMd = items
     .filter((item) => item.enabled)
     .reduce((sum, item) => sum + item.md_value, 0);
-  const months = totalMd > 0 ? Math.max(1, Math.ceil(totalMd / 20)) : 0;
+  const months = slaMonths;
   const slaTotal = months * slaMonthlyFee;
   const projectTotal = computeProjectTotal(adjustedSubtotal, pmAmount) + slaTotal;
 

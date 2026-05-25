@@ -1,0 +1,274 @@
+/* ============================================================
+   Design System — Backoffice Tool Style
+   Desktop-first, dense, functional, monospace
+
+   Fonts (load via Google Fonts or locally):
+   - Inter (headings)
+   - Roboto Mono (body, inputs, code)
+   ============================================================ */
+
+:root {
+  /* --- Colors --- */
+  --bg: #f8f9fa;
+  --surface: #ffffff;
+  --text: #212529;
+  --text-muted: #6c757d;
+  --border: #dee2e6;
+  --primary: #0d6efd;
+  --primary-hover: #0b5ed7;
+  --danger: #dc3545;
+  --success: #198754;
+  --warning: #ffc107;
+  --derived-bg: #e8f4fd;
+  --overridden-bg: #fff3cd;
+  --disabled-text: #adb5bd;
+
+  /* --- Typography --- */
+  --font-heading: 'Inter', sans-serif;
+  --font: 'Roboto Mono', monospace;
+}
+
+/* --- Reset --- */
+
+* { box-sizing: border-box; }
+
+/* Hide number spinners globally */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+/* --- App Layout --- */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.app-main {
+  flex: 1;
+  padding: 16px 24px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* --- Buttons --- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-family: var(--font);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover { background: #e9ecef; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.btn-primary:hover { background: var(--primary-hover); }
+
+.btn-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.btn-danger:hover { background: #f8d7da; }
+
+.btn-small { padding: 3px 8px; font-size: 12px; }
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+  text-decoration: underline;
+}
+.link-btn:hover { color: var(--primary-hover); }
+
+/* --- Tabs --- */
+
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--border);
+  background: var(--surface);
+  padding: 0 16px;
+}
+
+.tab {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-family: var(--font);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.tab:hover { color: var(--text); }
+.tab-active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+/* --- Tables --- */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.table th, .table td {
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.table th {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* --- Forms --- */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  max-width: 700px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.field input[type="text"],
+.field input[type="number"],
+.field input[type="date"],
+.field textarea,
+.field select {
+  padding: 6px 8px;
+  font-size: 14px;
+  font-family: var(--font);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+}
+
+.field textarea { resize: vertical; }
+
+/* --- Cards / Sections --- */
+
+.section {
+  margin-bottom: 32px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.section h3 { margin: 0 0 12px; }
+
+/* --- Auth screen (centered box) --- */
+
+.auth-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.auth-box {
+  text-align: center;
+  padding: 48px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+/* --- Status badges --- */
+
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.badge-default { background: #e9ecef; color: var(--text-muted); }
+.badge-info { background: #cfe2ff; color: #084298; }
+.badge-warning { background: #fff3cd; color: #664d03; }
+
+/* --- Utility --- */
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--text-muted);
+}
+
+.empty-state {
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 24px;
+  text-align: center;
+}
+
+.error-screen {
+  text-align: center;
+  padding: 48px;
+}
