@@ -108,7 +108,7 @@ h1, h2, h3, h4, h5, h6 {
 .app-main {
   flex: 1;
   padding: 16px 24px;
-  max-width: 1200px;
+  max-width: 1400px;
   width: 100%;
   margin: 0 auto;
 }
@@ -397,6 +397,39 @@ h1, h2, h3, h4, h5, h6 {
 .screens-table .row-num {
   color: var(--text-muted);
   width: 30px;
+}
+
+.screens-table .name-cell {
+  min-width: 180px;
+  word-break: break-word;
+  cursor: text;
+}
+
+.screens-table .note-cell {
+  min-width: 120px;
+  word-break: break-word;
+  cursor: text;
+}
+
+.name-text {
+  display: block;
+  padding: 3px 6px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.btn-icon {
+  background: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--text-muted);
+}
+.btn-icon:hover {
+  border-color: var(--border);
+  color: var(--text);
 }
 
 .flag-col { text-align: center; min-width: 80px; }

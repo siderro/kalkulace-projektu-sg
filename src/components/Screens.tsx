@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { ProjectScreen, ScreenComplexityCalibration, WorkTypeKey } from '../types';
 import { COMPLEXITY_PERCENTAGES, WORK_TYPE_LABELS } from '../types';
 import { formatDecimal } from '../lib/formatting';
@@ -18,6 +19,35 @@ const FLAG_KEYS: { key: keyof ProjectScreen; workType: WorkTypeKey }[] = [
   { key: 'ui_secondary_mobile', workType: 'ui_secondary_mobile' },
   { key: 'webflow', workType: 'webflow' },
 ];
+
+function TextCell({ value, onChange, placeholder, className }: {
+  value: string; onChange: (v: string) => void; placeholder: string; className?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+
+  if (editing) {
+    return (
+      <td className={className}>
+        <input
+          type="text"
+          autoFocus
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={() => setEditing(false)}
+          onKeyDown={(e) => { if (e.key === 'Enter') setEditing(false); }}
+          placeholder={placeholder}
+          className="input-inline"
+        />
+      </td>
+    );
+  }
+
+  return (
+    <td className={className} onClick={() => setEditing(true)}>
+      <span className="name-text">{value || <em className="input-note">{placeholder}</em>}</span>
+    </td>
+  );
+}
 
 export function Screens({ screens, calibration, onAdd, onUpdate, onDuplicate, onRemove }: Props) {
   // Compute per-screen MD for display
@@ -72,15 +102,12 @@ export function Screens({ screens, calibration, onAdd, onUpdate, onDuplicate, on
               {screens.map((screen, idx) => (
                 <tr key={screen.id}>
                   <td className="row-num">{idx + 1}</td>
-                  <td>
-                    <input
-                      type="text"
-                      value={screen.name}
-                      onChange={(e) => onUpdate(screen.id, 'name', e.target.value)}
-                      placeholder="Název obrazovky"
-                      className="input-inline"
-                    />
-                  </td>
+                  <TextCell
+                    value={screen.name}
+                    onChange={(val) => onUpdate(screen.id, 'name', val)}
+                    placeholder="Název obrazovky"
+                    className="name-cell"
+                  />
                   <td>
                     <select
                       value={screen.complexity}
@@ -120,22 +147,19 @@ export function Screens({ screens, calibration, onAdd, onUpdate, onDuplicate, on
                       </td>
                     );
                   })}
-                  <td>
-                    <input
-                      type="text"
-                      value={screen.note}
-                      onChange={(e) => onUpdate(screen.id, 'note', e.target.value)}
-                      placeholder="—"
-                      className="input-inline input-note"
-                    />
-                  </td>
+                  <TextCell
+                    value={screen.note}
+                    onChange={(val) => onUpdate(screen.id, 'note', val)}
+                    placeholder="—"
+                    className="note-cell"
+                  />
                   <td className="action-btns">
                     <button
-                      className="btn btn-small"
+                      className="btn btn-icon"
                       onClick={() => onDuplicate(screen.id)}
                       title="Duplikovat"
                     >
-                      Duplikovat
+                      ⟐
                     </button>
                     <button
                       className="btn btn-small btn-danger"
