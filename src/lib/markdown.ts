@@ -202,13 +202,18 @@ export function generateMarkdown(input: MarkdownInput): string {
 // --- Screens table helper ---
 
 function buildScreensTable(screens: ProjectScreen[]): string {
-  const flagLabels: { key: keyof ProjectScreen; label: string }[] = [
+  const allFlags: { key: keyof ProjectScreen; label: string }[] = [
     { key: 'ux_primary_desktop', label: 'UX Desktop' },
     { key: 'ux_secondary_mobile', label: 'UX Mobil' },
     { key: 'ui_primary_desktop', label: 'UI Desktop' },
     { key: 'ui_secondary_mobile', label: 'UI Mobil' },
     { key: 'webflow', label: 'Webflow' },
   ];
+
+  // Vynechat sloupce, kde žádná obrazovka nemá zaškrtnutý flag
+  const flagLabels = allFlags.filter((f) =>
+    screens.some((s) => s[f.key]),
+  );
 
   const header = `| # | Obrazovka | Složitost | ${flagLabels.map((f) => f.label).join(' | ')} |`;
   const separator = `|---|-----------|-----------|${flagLabels.map(() => '---').join('|')}|`;

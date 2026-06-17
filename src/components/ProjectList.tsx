@@ -8,9 +8,14 @@ interface Props {
   onNew: () => void;
 }
 
+type SortKey = 'name' | 'updated_at';
+type SortDir = 'asc' | 'desc';
+
 export function ProjectList({ onOpen, onNew }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortKey, setSortKey] = useState<SortKey>('updated_at');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   useEffect(() => {
     loadProjects();
@@ -34,6 +39,28 @@ export function ProjectList({ onOpen, onNew }: Props) {
     await loadProjects();
   }
 
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'name' ? 'asc' : 'desc');
+    }
+  }
+
+  const sortedProjects = [...projects].sort((a, b) => {
+    let cmp: number;
+    if (sortKey === 'name') {
+      cmp = (a.name || '').localeCompare(b.name || '', 'cs');
+    } else {
+      cmp = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+    }
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+
+  const arrow = (key: SortKey) =>
+    sortKey === key ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+
   return (
     <div className="project-list">
       <div className="project-list-header">
@@ -51,15 +78,25 @@ export function ProjectList({ onOpen, onNew }: Props) {
         <table className="table">
           <thead>
             <tr>
-              <th>Název</th>
+              <th
+                className={`sortable-th${sortKey === 'name' ? ' sort-active' : ''}`}
+                onClick={() => handleSort('name')}
+              >
+                Název{arrow('name')}
+              </th>
               <th>Verze</th>
               <th>Datum</th>
-              <th>Poslední úprava</th>
+              <th
+                className={`sortable-th${sortKey === 'updated_at' ? ' sort-active' : ''}`}
+                onClick={() => handleSort('updated_at')}
+              >
+                Poslední úprava{arrow('updated_at')}
+              </th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {projects.map((p) => (
+            {sortedProjects.map((p) => (
               <tr key={p.id}>
                 <td>
                   <button className="link-btn" onClick={() => onOpen(p.id)}>

@@ -375,6 +375,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 .project-list-header h2 { margin: 0; }
 
+.table th.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  color: var(--primary);
+}
+.table th.sortable-th:hover {
+  color: var(--primary-hover);
+}
+
 .empty-state {
   color: var(--text-muted);
   font-style: italic;
