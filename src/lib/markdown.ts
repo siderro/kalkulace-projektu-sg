@@ -30,6 +30,7 @@ export function generateMarkdown(input: MarkdownInput): string {
   const { project, screens, billableItems, definitions, summary, settings } = input;
 
   const defMap = new Map(definitions.map((d) => [d.id, d]));
+  const coeff = project.complexity_coefficient_percent / 100;
 
   const enabledItems = billableItems.filter((item) => item.enabled);
   const enabledDefs = enabledItems.map((item) => ({
@@ -110,7 +111,7 @@ export function generateMarkdown(input: MarkdownInput): string {
     const sectionLabel = SECTION_LABELS[sectionKey];
     const rows: string[] = [];
     for (const { item, def } of sectionItems) {
-      rows.push(`| ${def.label} | ${formatDecimal(item.md_value)} MD | ${formatCurrencyMd(item.price_value)} |`);
+      rows.push(`| ${def.label} | ${formatDecimal(item.md_value)} MD | ${formatCurrencyMd(item.price_value * coeff)} |`);
       if (def.description) {
         rows.push('');
         rows.push(def.description);
@@ -119,7 +120,7 @@ export function generateMarkdown(input: MarkdownInput): string {
     }
 
     const sectionTotal = sectionItems.reduce(
-      (sum, { item }) => sum + item.price_value,
+      (sum, { item }) => sum + item.price_value * coeff,
       0,
     );
 
@@ -142,12 +143,7 @@ export function generateMarkdown(input: MarkdownInput): string {
       ``,
       `| | Hodnota |`,
       `|---|---|`,
-      `| Mezisoučet fakturovatelných položek | ${formatCurrencyMd(summary.billableSubtotal)} |`,
-      ...(project.complexity_coefficient_percent !== 100
-        ? [
-            `| Koeficient složitosti (${project.complexity_coefficient_percent} %) | ${formatCurrencyMd(summary.adjustedSubtotal)} |`,
-          ]
-        : []),
+      `| Mezisoučet fakturovatelných položek | ${formatCurrencyMd(summary.adjustedSubtotal)} |`,
       `| Project management (${project.pm_percent} %) | ${formatCurrencyMd(summary.pmAmount)} |`,
       ...(summary.slaTotal > 0
         ? [
