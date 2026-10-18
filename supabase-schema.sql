@@ -13,7 +13,6 @@ create table global_settings (
   default_pm_percent numeric not null default 8,
   default_sla_monthly_fee numeric not null default 900,
   default_first_mobile_set boolean not null default false,
-  default_days_to_start integer not null default 14,
   md_supplier_info text not null default '**Švejda & Goldmann s.r.o.**
 Sídlo: Karlovo náměstí 290/16, 120 00 Praha 2
 IČO: 09831193
@@ -26,8 +25,8 @@ DIČ: CZ09831193',
 -- Insert default settings row
 insert into global_settings (
   default_hourly_rate, default_pm_percent,
-  default_sla_monthly_fee, default_first_mobile_set, default_days_to_start
-) values (1845, 8, 900, false, 14);
+  default_sla_monthly_fee, default_first_mobile_set
+) values (1845, 8, 900, false);
 
 -- 2. Screen Complexity Calibration
 create table screen_complexity_calibration (
@@ -89,8 +88,8 @@ create table projects (
   first_mobile_set boolean not null default false,
   sla_monthly_fee numeric not null default 900,
   sla_months integer not null default 1,
-  days_to_start integer not null default 14,
-  expected_start_date date not null default (current_date + interval '14 days'),
+  start_date date,
+  end_date date,
   notes text not null default '',
   created_by text not null default '',
   created_at timestamptz not null default now(),

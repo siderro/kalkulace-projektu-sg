@@ -77,12 +77,31 @@ export function todayIso(): string {
 }
 
 /**
- * Compute expected start date from today + days offset.
+ * Doba mezi dvěma daty v celých měsících a zbylých dnech.
+ * e.g. 2026-10-24 → 2026-12-31 = "2 měs. 7 dní"
  */
-export function computeExpectedStartDate(daysToStart: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + daysToStart);
-  return d.toISOString().slice(0, 10);
+export function formatDuration(startIso: string | null, endIso: string | null): string {
+  if (!startIso || !endIso) return '';
+  const start = new Date(startIso);
+  const end = new Date(endIso);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return '';
+
+  // Start + n měsíců; den se ořízne na konec cílového měsíce (31. 1. + 1 měs. = 28. 2.)
+  const addMonths = (n: number) => {
+    const total = start.getUTCFullYear() * 12 + start.getUTCMonth() + n;
+    const lastDay = new Date(Date.UTC(Math.floor(total / 12), (total % 12) + 1, 0)).getUTCDate();
+    return Date.UTC(Math.floor(total / 12), total % 12, Math.min(start.getUTCDate(), lastDay));
+  };
+
+  let months =
+    (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + (end.getUTCMonth() - start.getUTCMonth());
+  if (addMonths(months) > end.getTime()) months -= 1;
+  const days = Math.round((end.getTime() - addMonths(months)) / 86400000);
+
+  const parts: string[] = [];
+  if (months > 0) parts.push(`${months} měs.`);
+  if (days > 0) parts.push(`${days} ${days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'}`);
+  return parts.join(' ') || '0 dní';
 }
 
 /**

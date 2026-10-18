@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { Project, GlobalSettings } from '../types';
-import { formatCzechDate, formatCurrency, generateProjectCode } from '../lib/formatting';
+import { formatCurrency, generateProjectCode } from '../lib/formatting';
 
 interface Props {
   project: Project;
@@ -68,9 +68,16 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
         </label>
         <input
           type={type}
-          value={type === 'number' ? (value as number) : (value as string)}
+          value={type === 'number' ? (value as number) : ((value as string | null) ?? '')}
           onChange={(e) =>
-            onUpdate(key, type === 'number' ? Number(e.target.value) : e.target.value)
+            onUpdate(
+              key,
+              type === 'number'
+                ? Number(e.target.value)
+                : type === 'date' && !e.target.value
+                  ? null
+                  : e.target.value,
+            )
           }
           className={isChanged ? 'input-warning' : ''}
         />
@@ -118,11 +125,8 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
 
         {field('SLA měsíční paušál (Kč)', 'sla_monthly_fee', 'number', String(settings.default_sla_monthly_fee), settings.default_sla_monthly_fee)}
         {field('SLA počet měsíců', 'sla_months', 'number', '1', 1)}
-        {field('Dní do zahájení', 'days_to_start', 'number', String(settings.default_days_to_start))}
-        <div className="field">
-          <label>Předpokládané zahájení <span className="default-hint">vypočteno</span></label>
-          <input type="text" value={formatCzechDate(project.expected_start_date)} disabled className="input-computed" />
-        </div>
+        {field('Začátek projektu', 'start_date', 'date')}
+        {field('Konec projektu', 'end_date', 'date')}
         {field('První mobilní sada', 'first_mobile_set', 'checkbox', settings.default_first_mobile_set ? 'ano' : 'ne')}
 
         <div className="form-divider" />

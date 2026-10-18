@@ -17,7 +17,7 @@ import {
 } from '../lib/db';
 import { computeAllDerivedMdTotals, buildBillableItems, computeProjectSummary, computeItemPrice } from '../lib/calculations';
 import type { ProjectSummary } from '../lib/calculations';
-import { todayIso, computeExpectedStartDate } from '../lib/formatting';
+import { todayIso } from '../lib/formatting';
 
 export interface ProjectState {
   project: Project | null;
@@ -116,8 +116,8 @@ export function useProject(): ProjectState {
         first_mobile_set: settings.default_first_mobile_set,
         sla_monthly_fee: settings.default_sla_monthly_fee,
         sla_months: 1,
-        days_to_start: settings.default_days_to_start,
-        expected_start_date: computeExpectedStartDate(settings.default_days_to_start),
+        start_date: null,
+        end_date: null,
         notes: '',
         created_by: '',
         created_at: now,
@@ -144,9 +144,6 @@ export function useProject(): ProjectState {
     setProject((prev) => {
       if (!prev) return prev;
       const updated = { ...prev, [field]: value };
-      if (field === 'days_to_start') {
-        updated.expected_start_date = computeExpectedStartDate(value as number);
-      }
       return updated;
     });
 

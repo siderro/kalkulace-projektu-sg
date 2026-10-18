@@ -15,7 +15,6 @@ System-wide values such as:
 - default_sla_monthly_fee
 - default_programming_hourly_rate
 - default_first_mobile_set
-- default_days_to_start
 
 ### screen_complexity_calibration
 
@@ -60,8 +59,8 @@ Fields:
 - pm_percent
 - first_mobile_set
 - sla_monthly_fee
-- days_to_start
-- expected_start_date
+- start_date
+- end_date
 - programming_hourly_rate
 - notes
 - created_by

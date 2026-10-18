@@ -11,8 +11,8 @@ import {
   type SectionKey,
   SECTION_LABELS,
 } from '../types';
-import { type ProjectSummary } from './calculations';
-import { formatCzechDate, formatCurrencyMd, formatDecimal } from './formatting';
+import { type ProjectSummary, computeAdjustedItemPrice } from './calculations';
+import { formatCzechDate, formatCurrencyMd, formatDecimal, formatDuration } from './formatting';
 
 export interface MarkdownInput {
   project: Project;
@@ -30,7 +30,8 @@ export function generateMarkdown(input: MarkdownInput): string {
   const { project, screens, billableItems, definitions, summary, settings } = input;
 
   const defMap = new Map(definitions.map((d) => [d.id, d]));
-  const coeff = project.complexity_coefficient_percent / 100;
+  const adjusted = (price: number) =>
+    computeAdjustedItemPrice(price, project.complexity_coefficient_percent);
 
   const enabledItems = billableItems.filter((item) => item.enabled);
   const enabledDefs = enabledItems.map((item) => ({
@@ -40,61 +41,44 @@ export function generateMarkdown(input: MarkdownInput): string {
 
   const sections: string[] = [];
 
-  // 1. Header line with version and date
+  // Hlavička s verzí a datem
   sections.push(
     `**Verze ${project.version_label}** | ${formatCzechDate(project.project_date)}`,
   );
 
-  // 2. Cost estimate heading
-  sections.push(`# Cenový odhad`);
+  sections.push(`# Cenový odhad – ${project.name}`);
 
-  // 3. Project name
-  sections.push(`## ${project.name}`);
+  // Kontakty (z nastavení)
+  sections.push(`## Na koho se v ŠG obracet\n\n${settings.md_contacts}`);
 
-  // 4. Company information (from settings)
-  sections.push(`### Dodavatel\n\n${settings.md_supplier_info}`);
-
-  // 5. Contacts (from settings)
-  sections.push(`### Kontakty\n\n${settings.md_contacts}`);
-
-  // 6. Reference projects (from settings)
-  sections.push(`### Reference\n\n${settings.md_references}`);
-
-  // 7. Management summary — scope list from enabled items
-  const scopeBlocks = enabledDefs.flatMap(({ def }) => [
-    `#### ${def.label}`,
-    ``,
-    ...(def.description ? [def.description, ``] : []),
-  ]);
+  // Shrnutí: výčet rozsahu, termíny, cena
+  const firstScreenDerived = enabledDefs.findIndex(
+    ({ def }) => def.calculation_type === 'derived_from_screens',
+  );
+  const scopeBullets = enabledDefs.map(({ def }, i) =>
+    i === firstScreenDerived && screens.length > 0
+      ? `- ${def.label} – scope stránek je definován v příloze`
+      : `- ${def.label}`,
+  );
+  const termLines = [
+    ...(project.start_date ? [`Začátek projektu: ${formatCzechDate(project.start_date)}`] : []),
+    ...(project.end_date ? [`Konec projektu: ${formatCzechDate(project.end_date)}`] : []),
+    ...(formatDuration(project.start_date, project.end_date)
+      ? [`Celková doba: ${formatDuration(project.start_date, project.end_date)}`]
+      : []),
+  ];
   sections.push(
     [
-      `### Rozsah projektu`,
+      `## Shrnutí společného projektu`,
       ``,
-      `Cenový odhad zahrnuje:`,
+      ...scopeBullets,
+      ...(termLines.length > 0 ? [``, termLines.join('  \n')] : []),
       ``,
-      ...scopeBlocks,
-    ].join('\n').trimEnd(),
+      `**Celková cena za projekt: ${formatCurrencyMd(summary.projectTotal)}** (bez DPH)`,
+    ].join('\n'),
   );
 
-  // 8. Scope summary
-  if (screens.length > 0) {
-    const screenNames = screens.map((s) => s.name).join(', ');
-    sections.push(
-      [
-        `### Přehled obrazovek`,
-        ``,
-        `Projekt zahrnuje ${screens.length} obrazovek: ${screenNames}.`,
-      ].join('\n'),
-    );
-  }
-
-  // 9. Screens overview table
-  if (screens.length > 0) {
-    const screenTable = buildScreensTable(screens);
-    sections.push(screenTable);
-  }
-
-  // 10. Billable products by section
+  // Detailní rozsah: tabulky po sekcích
   const sectionKeys: SectionKey[] = [
     'pruzkum_a_pozice',
     'koncept',
@@ -102,6 +86,7 @@ export function generateMarkdown(input: MarkdownInput): string {
     'programming',
   ];
 
+  const sectionBlocks: string[] = [];
   for (const sectionKey of sectionKeys) {
     const sectionItems = enabledDefs.filter(
       ({ def }) => def.section_key === sectionKey,
@@ -110,89 +95,89 @@ export function generateMarkdown(input: MarkdownInput): string {
 
     const sectionLabel = SECTION_LABELS[sectionKey];
     const rows: string[] = [];
+    const descriptions: string[] = [];
     for (const { item, def } of sectionItems) {
-      rows.push(`| ${def.label} | ${formatDecimal(item.md_value)} MD | ${formatCurrencyMd(item.price_value * coeff)} |`);
-      if (def.description) {
-        rows.push('');
-        rows.push(def.description);
-        rows.push('');
-      }
+      rows.push(`| ${def.label} | ${formatDecimal(item.md_value)} MD | ${formatCurrencyMd(adjusted(item.price_value))} |`);
+      if (def.description) descriptions.push(def.description);
     }
 
     const sectionTotal = sectionItems.reduce(
-      (sum, { item }) => sum + item.price_value * coeff,
+      (sum, { item }) => sum + adjusted(item.price_value),
       0,
     );
 
-    sections.push(
+    sectionBlocks.push(
       [
-        `#### ${sectionLabel}`,
+        `### ${sectionLabel}`,
         ``,
         `| Položka | Rozsah | Cena |`,
         `|---------|--------|------|`,
         ...rows,
         `| **Celkem ${sectionLabel}** | | **${formatCurrencyMd(sectionTotal)}** |`,
+        ...(descriptions.length > 0 ? [``, descriptions.join('\n\n')] : []),
       ].join('\n'),
     );
   }
+  sections.push([`## Detailní rozsah projektu`, ``, sectionBlocks.join('\n\n')].join('\n'));
 
-  // 11. Summary
+  // Celková cena
   sections.push(
     [
-      `### Souhrn`,
+      `## Celková cena`,
       ``,
-      `| | Hodnota |`,
+      `| | Cena |`,
       `|---|---|`,
-      `| Mezisoučet fakturovatelných položek | ${formatCurrencyMd(summary.adjustedSubtotal)} |`,
+      `| Mezisoučet | ${formatCurrencyMd(summary.adjustedSubtotal)} |`,
       `| Project management (${project.pm_percent} %) | ${formatCurrencyMd(summary.pmAmount)} |`,
       ...(summary.slaTotal > 0
         ? [
             `| SLA (${summary.months} měs. × ${formatCurrencyMd(summary.slaMonthlyFee)}) | ${formatCurrencyMd(summary.slaTotal)} |`,
           ]
         : []),
-      `| **Celková cena projektu** | **${formatCurrencyMd(summary.projectTotal)}** |`,
+      `| **Celková cena projektu** (bez DPH) | **${formatCurrencyMd(summary.projectTotal)}** |`,
     ].join('\n'),
   );
 
-  // 12. PM explanation
+  // Vysvětlení PM
   sections.push(
     [
-      `### Project management`,
+      `## Project management`,
       ``,
-      `Project management je kalkulován jako ${project.pm_percent} % z celkové ceny realizace.`,
-      `Zahrnuje řízení projektu, komunikaci s klientem, koordinaci týmu a průběžný reporting.`,
+      `Project management je kalkulován jako ${project.pm_percent} % z mezisoučtu. Zahrnuje řízení projektu, komunikaci s klientem, koordinaci týmu a průběžný reporting.`,
     ].join('\n'),
   );
 
-  // 13. SLA explanation
+  // Vysvětlení SLA
   if (project.sla_monthly_fee > 0) {
     sections.push(
       [
-        `### SLA a průběžná podpora`,
+        `## SLA a průběžná podpora`,
         ``,
-        `Měsíční paušál za SLA a průběžnou podporu: **${formatCurrencyMd(project.sla_monthly_fee)}/měsíc**.`,
-        `SLA zahrnuje garantovanou dobu reakce, pravidelnou údržbu a prioritní řešení požadavků.`,
+        `Měsíční paušál za SLA a průběžnou podporu: ${formatCurrencyMd(project.sla_monthly_fee)}/měsíc, po dobu ${summary.months} měs. po spuštění. SLA zahrnuje garantovanou dobu reakce, pravidelnou údržbu a prioritní řešení požadavků.`,
       ].join('\n'),
     );
   }
 
-  // 14. Additional info
+  // Další informace
   sections.push(
     [
-      `### Další informace`,
+      `## Další informace`,
       ``,
       `- Všechny ceny jsou uvedeny bez DPH.`,
       `- Cenový odhad je platný 30 dní od data vystavení.`,
-      ...(project.days_to_start > 0
-        ? [
-            `- Předpokládaný začátek projektu: ${formatCzechDate(project.expected_start_date)}.`,
-          ]
-        : []),
       ...(project.notes ? [``, `**Poznámky:** ${project.notes}`] : []),
     ].join('\n'),
   );
 
-  return sections.join('\n\n---\n\n');
+  // Dodavatel (z nastavení)
+  sections.push(`## Dodavatel\n\n${settings.md_supplier_info}`);
+
+  // Příloha: přehled obrazovek (bez složitosti)
+  if (screens.length > 0) {
+    sections.push(`## Příloha: Přehled obrazovek\n\n${buildScreensTable(screens)}`);
+  }
+
+  return sections.join('\n\n');
 }
 
 // --- Screens table helper ---
@@ -211,14 +196,14 @@ function buildScreensTable(screens: ProjectScreen[]): string {
     screens.some((s) => s[f.key]),
   );
 
-  const header = `| # | Obrazovka | Složitost | ${flagLabels.map((f) => f.label).join(' | ')} |`;
-  const separator = `|---|-----------|-----------|${flagLabels.map(() => '---').join('|')}|`;
+  const header = `| # | Obrazovka | ${flagLabels.map((f) => f.label).join(' | ')} |`;
+  const separator = `|---|-----------|${flagLabels.map(() => '---').join('|')}|`;
 
   const rows = screens.map((s, i) => {
     const flags = flagLabels
       .map((f) => (s[f.key] ? '✓' : '–'))
       .join(' | ');
-    return `| ${i + 1} | ${s.name} | ${s.complexity} | ${flags} |`;
+    return `| ${i + 1} | ${s.name} | ${flags} |`;
   });
 
   return [header, separator, ...rows].join('\n');

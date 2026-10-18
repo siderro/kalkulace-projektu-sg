@@ -139,14 +139,6 @@ export function GlobalSettingsPanel({
                   onChange={(e) => update('default_sla_monthly_fee', Number(e.target.value))}
                 />
               </div>
-              <div className="field">
-                <label>Výchozí dní do zahájení</label>
-                <input
-                  type="number"
-                  value={local.default_days_to_start}
-                  onChange={(e) => update('default_days_to_start', Number(e.target.value))}
-                />
-              </div>
               <label className="field field-checkbox">
                 <input
                   type="checkbox"

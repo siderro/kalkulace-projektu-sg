@@ -156,13 +156,28 @@ export function computeBillableSubtotal(
     .reduce((sum, item) => sum + item.price_value, 0);
 }
 
-// --- Adjusted subtotal (after complexity coefficient) ---
+// --- Cena položky po koeficientu složitosti, zaokrouhlená na koruny ---
+// Všechny součty se skládají z těchto zaokrouhlených hodnot, aby v nabídce seděly na korunu.
 
-export function computeAdjustedSubtotal(
-  billableSubtotal: number,
+export function computeAdjustedItemPrice(
+  priceValue: number,
   complexityCoefficientPercent: number,
 ): number {
-  return billableSubtotal * (complexityCoefficientPercent / 100);
+  return Math.round(priceValue * (complexityCoefficientPercent / 100));
+}
+
+// --- Adjusted subtotal (součet zaokrouhlených cen položek po koeficientu) ---
+
+export function computeAdjustedSubtotal(
+  items: ProjectBillableItem[],
+  complexityCoefficientPercent: number,
+): number {
+  return items
+    .filter((item) => item.enabled)
+    .reduce(
+      (sum, item) => sum + computeAdjustedItemPrice(item.price_value, complexityCoefficientPercent),
+      0,
+    );
 }
 
 // --- PM amount ---
@@ -171,7 +186,7 @@ export function computePmAmount(
   adjustedSubtotal: number,
   pmPercent: number,
 ): number {
-  return adjustedSubtotal * (pmPercent / 100);
+  return Math.round(adjustedSubtotal * (pmPercent / 100));
 }
 
 // --- Total (adjusted subtotal + PM + SLA is separate) ---
@@ -204,10 +219,7 @@ export function computeProjectSummary(
   slaMonths: number,
 ): ProjectSummary {
   const billableSubtotal = computeBillableSubtotal(items);
-  const adjustedSubtotal = computeAdjustedSubtotal(
-    billableSubtotal,
-    complexityCoefficientPercent,
-  );
+  const adjustedSubtotal = computeAdjustedSubtotal(items, complexityCoefficientPercent);
   const pmAmount = computePmAmount(adjustedSubtotal, pmPercent);
   const totalMd = items
     .filter((item) => item.enabled)

@@ -11,7 +11,6 @@ export interface GlobalSettings {
   default_pm_percent: number;
   default_sla_monthly_fee: number;
   default_first_mobile_set: boolean;
-  default_days_to_start: number;
   md_supplier_info: string;
   md_contacts: string;
   md_references: string;
@@ -77,8 +76,8 @@ export interface Project {
   first_mobile_set: boolean;
   sla_monthly_fee: number;
   sla_months: number;
-  days_to_start: number;
-  expected_start_date: string; // ISO date string, computed from days_to_start
+  start_date: string | null; // ISO date string
+  end_date: string | null; // ISO date string
   notes: string;
   created_by: string;
   created_at: string;
