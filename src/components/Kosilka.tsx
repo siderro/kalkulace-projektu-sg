@@ -111,7 +111,12 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
         <div className="form-divider" />
 
         {field('Verze', 'version_label')}
-        {field('Datum projektu', 'project_date', 'date')}
+        {field('Datum verze', 'project_date', 'date')}
+
+        <div className="form-divider" />
+
+        {field('Začátek projektu', 'start_date', 'date')}
+        {field('Konec projektu', 'end_date', 'date')}
 
         <div className="form-divider" />
 
@@ -130,15 +135,28 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
 
         {field('Podpora po spuštění (Kč/měs.)', 'sla_monthly_fee', 'number', String(settings.default_sla_monthly_fee), settings.default_sla_monthly_fee)}
         {field('Podpora po spuštění – počet měsíců', 'sla_months', 'number', '1', 1)}
-        {field('Začátek projektu', 'start_date', 'date')}
-        {field('Konec projektu', 'end_date', 'date')}
         {field('První mobilní sada', 'first_mobile_set', 'checkbox', settings.default_first_mobile_set ? 'ano' : 'ne')}
 
         <div className="form-divider" />
 
         {field('Cíl projektu (zobrazí se v nabídce)', 'goal', 'textarea')}
-        {field('Nezahrnuje navíc (doplní globální seznam)', 'exclusions_extra', 'textarea')}
-        {field('Reference pro tuto nabídku (přepíše výchozí)', 'references_override', 'textarea')}
+        {/* Celý text sekce nabídky; prázdné pole = výchozí text z Nastavení (zobrazí se tady) */}
+        <div className="field">
+          <label>Podobné projekty, které jsme dělali (prázdné = sekce se netiskne)</label>
+          <textarea
+            value={project.references_override.trim() ? project.references_override : settings.md_references}
+            onChange={(e) => onUpdate('references_override', e.target.value)}
+            rows={5}
+          />
+        </div>
+        <div className="field">
+          <label>Co nabídka nezahrnuje</label>
+          <textarea
+            value={project.exclusions_extra.trim() ? project.exclusions_extra : settings.md_exclusions}
+            onChange={(e) => onUpdate('exclusions_extra', e.target.value)}
+            rows={6}
+          />
+        </div>
         {field('Poznámky', 'notes', 'textarea')}
       </div>
     </div>

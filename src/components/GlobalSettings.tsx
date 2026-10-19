@@ -230,23 +230,23 @@ export function GlobalSettingsPanel({
           <div className="settings-section">
             <h3>Nastavení Markdown výstupu</h3>
             <div className="field" style={{ marginBottom: 16 }}>
-              <label>Dodavatel</label>
+              <label>Základní informace o společnosti (každý údaj na vlastní řádek; v nabídce se spojí čárkami)</label>
               <textarea
                 value={local.md_supplier_info}
                 onChange={(e) => update('md_supplier_info', e.target.value)}
-                rows={5}
+                rows={8}
               />
             </div>
             <div className="field" style={{ marginBottom: 16 }}>
-              <label>Kontakty</label>
+              <label>Na koho se v ŠG obracet (jméno jako „### Jméno“, pod ním role, telefon a e-mail na vlastních řádcích)</label>
               <textarea
                 value={local.md_contacts}
                 onChange={(e) => update('md_contacts', e.target.value)}
-                rows={4}
+                rows={15}
               />
             </div>
             <div className="field" style={{ marginBottom: 16 }}>
-              <label>Reference (Markdown seznam; prázdné = sekce se netiskne)</label>
+              <label>Výchozí reference pro nové projekty (upravují se v košilce)</label>
               <textarea
                 value={local.md_references}
                 onChange={(e) => update('md_references', e.target.value)}
@@ -254,7 +254,7 @@ export function GlobalSettingsPanel({
               />
             </div>
             <div className="field" style={{ marginBottom: 16 }}>
-              <label>Co nabídka nezahrnuje (Markdown seznam)</label>
+              <label>Výchozí „Co nabídka nezahrnuje“ pro nové projekty (upravuje se v košilce)</label>
               <textarea
                 value={local.md_exclusions}
                 onChange={(e) => update('md_exclusions', e.target.value)}

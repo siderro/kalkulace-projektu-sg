@@ -20,20 +20,23 @@ export const DEFAULT_GLOBAL_SETTINGS: Omit<GlobalSettings, 'id'> = {
 Pernerova 293/11
 186 00 Praha 8
 IČ 04888189
-DIČ CZ04888189R
+DIČ CZ04888189
 u MS v Praze, C 254389
 DS hb6svz2
 Číslo účtu: 2700976062 / 2010 (Fio)`,
-  md_contacts: `**Termíny a průběh projektu**
-Lydia Tomajková, Project lead 776 376 585
+  md_contacts: `### Lydia Tomajková
+Project lead, termíny a průběh projektu
+776 376 585
 lydia.tomajkova@svejda-goldmann.cz
 
-**Design**
-David Švejda, Design lead 602 384 820
+### David Švejda
+Design lead
+602 384 820
 david@svejda-goldmann.cz
 
-**Strategie a rozpočet**
-Jakub Goldmann, CEO 777 907 719
+### Jakub Goldmann
+CEO, strategie a rozpočet
+777 907 719
 jakub@svejda-goldmann.cz`,
   md_references: ``,
   md_exclusions: `- Copywriting a tvorba textů
@@ -43,7 +46,7 @@ jakub@svejda-goldmann.cz`,
 - Překlady do dalších jazyků`,
   md_support_text: `Zahrnuje reakci na vaše požadavky do 2 pracovních dnů, pravidelné aktualizace a drobné úpravy obsahu v rozsahu do 2 hodin měsíčně.`,
   md_payment_terms: `Nic nefakturujeme předem. Fakturu za každou etapu vystavujeme až po jejím uzavření a vašem schválení. Splatnost faktur je 14 dní.`,
-  md_pm_text: `Po celou dobu projektu máte jednoho kontaktního člověka – Lydii Tomajkovou. Každý týden dostanete krátký status, hlídáme termíny, rozpočet i rozsah a koordinujeme celý tým tak, abyste se nemuseli starat o nic jiného než o zpětnou vazbu.`,
+  md_pm_text: `Po celou dobu projektu máte jednoho kontaktního člověka – **Lydii Tomajkovou** (776 376 585, lydia.tomajkova@svejda-goldmann.cz). Každý týden dostanete krátký status, hlídáme termíny, rozpočet i rozsah a koordinujeme celý tým tak, abyste se nemuseli starat o nic jiného než o zpětnou vazbu.`,
   md_next_steps: `1. Potvrdíte nám nabídku (stačí e-mailem).
 2. Domluvíme termín kick-off schůzky.
 3. Na kick-offu si projdeme zadání, podklady a harmonogram.

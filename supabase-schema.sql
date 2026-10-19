@@ -14,12 +14,28 @@ create table global_settings (
   default_sla_monthly_fee numeric not null default 0,
   default_first_mobile_set boolean not null default false,
   pm_min_monthly_invoice numeric not null default 5000,
-  md_supplier_info text not null default '**Švejda & Goldmann s.r.o.**
-Sídlo: Karlovo náměstí 290/16, 120 00 Praha 2
-IČO: 09831193
-DIČ: CZ09831193',
-  md_contacts text not null default '- Jan Švejda — jan@svejda-goldmann.cz
-- Jakub Goldmann — jakub@svejda-goldmann.cz',
+  md_supplier_info text not null default 'Švejda Goldmann, s.r.o.
+Pernerova 293/11
+186 00 Praha 8
+IČ 04888189
+DIČ CZ04888189
+u MS v Praze, C 254389
+DS hb6svz2
+Číslo účtu: 2700976062 / 2010 (Fio)',
+  md_contacts text not null default '### Lydia Tomajková
+Project lead, termíny a průběh projektu
+776 376 585
+lydia.tomajkova@svejda-goldmann.cz
+
+### David Švejda
+Design lead
+602 384 820
+david@svejda-goldmann.cz
+
+### Jakub Goldmann
+CEO, strategie a rozpočet
+777 907 719
+jakub@svejda-goldmann.cz',
   md_references text not null default '',
   md_exclusions text not null default '- Copywriting a tvorba textů
 - Fotografie, ilustrace a videa
@@ -28,7 +44,7 @@ DIČ: CZ09831193',
 - Překlady do dalších jazyků',
   md_support_text text not null default 'Zahrnuje reakci na vaše požadavky do 2 pracovních dnů, pravidelné aktualizace a drobné úpravy obsahu v rozsahu do 2 hodin měsíčně.',
   md_payment_terms text not null default 'Nic nefakturujeme předem. Fakturu za každou etapu vystavujeme až po jejím uzavření a vašem schválení. Splatnost faktur je 14 dní.',
-  md_pm_text text not null default 'Po celou dobu projektu máte jednoho kontaktního člověka – Lydii Tomajkovou. Každý týden dostanete krátký status, hlídáme termíny, rozpočet i rozsah a koordinujeme celý tým tak, abyste se nemuseli starat o nic jiného než o zpětnou vazbu.',
+  md_pm_text text not null default 'Po celou dobu projektu máte jednoho kontaktního člověka – **Lydii Tomajkovou** (776 376 585, lydia.tomajkova@svejda-goldmann.cz). Každý týden dostanete krátký status, hlídáme termíny, rozpočet i rozsah a koordinujeme celý tým tak, abyste se nemuseli starat o nic jiného než o zpětnou vazbu.',
   md_next_steps text not null default '1. Potvrdíte nám nabídku (stačí e-mailem).
 2. Domluvíme termín kick-off schůzky.
 3. Na kick-offu si projdeme zadání, podklady a harmonogram.

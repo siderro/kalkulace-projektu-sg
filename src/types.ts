@@ -87,8 +87,8 @@ export interface Project {
   goal: string; // cíl / zadání projektu slovy klienta
   client_name: string;
   client_contact: string;
-  exclusions_extra: string; // projektové doplnění k „Co nabídka nezahrnuje“
-  references_override: string; // přepíše globální reference, pokud je vyplněno
+  exclusions_extra: string; // celý text „Co nabídka nezahrnuje“ (prázdné = výchozí z nastavení)
+  references_override: string; // celý text referencí (prázdné = výchozí z nastavení)
   notes: string;
   created_by: string;
   created_at: string;

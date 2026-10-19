@@ -10,6 +10,7 @@ import {
   type GlobalSettings,
   type SectionKey,
   SECTION_LABELS,
+  WORK_TYPE_LABELS,
 } from '../types';
 import { type ProjectSummary, computeAdjustedItemPrice } from './calculations';
 import {
@@ -35,14 +36,6 @@ const SECTION_ORDER: SectionKey[] = [
   'vizualni_design',
   'programming',
 ];
-
-// Jedna věta hodnoty ke každé etapě pro Shrnutí – klient čte „co z toho bude mít“, ne výpis katalogu
-const STAGE_VALUE: Record<SectionKey, string> = {
-  pruzkum_a_pozice: 'pochopíme vaše uživatele, trh a zadání',
-  koncept: 'navrhneme strukturu a logiku, ověříme ji s uživateli',
-  vizualni_design: 'dáme webu tvář, která odpovídá vaší značce',
-  programming: 'postavíme funkční web připravený ke spuštění',
-};
 
 interface Stage {
   key: SectionKey;
@@ -86,7 +79,7 @@ export function generateMarkdown(input: MarkdownInput): string {
   // Komu je nabídka určena (pokud je vyplněn klient)
   if (project.client_name.trim()) {
     const contact = project.client_contact.trim();
-    sections.push(`Pro: **${project.client_name.trim()}**${contact ? ` · ${contact}` : ''}`);
+    sections.push(`Pro: **${project.client_name.trim()}**${contact ? `, ${contact}` : ''}`);
   }
 
   // Cíl projektu slovy klienta (pokud je vyplněn)
@@ -94,11 +87,8 @@ export function generateMarkdown(input: MarkdownInput): string {
     sections.push(`## Cíl projektu\n\n${project.goal.trim()}`);
   }
 
-  // Shrnutí: etapy s větou hodnoty, termíny, cena
-  const scopeBullets = stages.map(
-    ({ key, label, items }) =>
-      `- **${label}** – ${STAGE_VALUE[key]}: ${items.map(({ def }) => def.label).join(', ')}`,
-  );
+  // Shrnutí: jen názvy zaškrtnutých činností (v pořadí etap), termíny, cena
+  const scopeBullets = stages.flatMap(({ items }) => items.map(({ def }) => `- ${def.label}`));
   const duration = formatDuration(project.start_date, project.end_date);
   const termLines = [
     ...(project.start_date ? [`Začátek projektu: **${formatCzechDate(project.start_date)}**`] : []),
@@ -110,15 +100,10 @@ export function generateMarkdown(input: MarkdownInput): string {
       `## Shrnutí společného projektu`,
       ``,
       ...scopeBullets,
-      ...(screens.length > 0 ? [``, `Rozsah obrazovek je v tabulce „Přehled obrazovek“ níže.`] : []),
-      ...(termLines.length > 0
-        ? [
-            ``,
-            termLines.join('  \n'),
-            ``,
-            `Abychom termíny dodrželi, budeme od vás potřebovat podklady a zpětnou vazbu do 5 pracovních dnů od předání každé etapy.`,
-          ]
-        : []),
+      ...(screens.length > 0 ? [``, `Rozsah obrazovek je v tabulce „Přehled obrazovek“ v příloze.`] : []),
+      ...(termLines.length > 0 ? [``, termLines.join('  \n')] : []),
+      ``,
+      `Projekt závisí na vaší součinnosti – po každé iteraci od vás potřebujeme zpětnou vazbu, ideálně do 2 dnů.`,
       ``,
       `Celková cena za projekt: **${formatCurrencyMd(summary.projectTotal)}** (bez DPH)  `,
       `Platíte vždy až za schválenou etapu – nic předem.`,
@@ -126,7 +111,9 @@ export function generateMarkdown(input: MarkdownInput): string {
   );
 
   // Reference: projektový přepis má přednost, prázdné = sekce se netiskne
-  const references = (project.references_override.trim() || settings.md_references).trim();
+  const references = stripTitle(project.references_override.trim() || settings.md_references, [
+    'Referenční projekty', 'Reference', 'Podobné projekty', 'Podobné projekty, které jsme dělali',
+  ]);
   if (references) {
     sections.push(`## Podobné projekty, které jsme dělali\n\n${references}`);
   }
@@ -151,11 +138,6 @@ export function generateMarkdown(input: MarkdownInput): string {
   });
   sections.push([`## Detailní rozsah projektu`, ``, sectionBlocks.join('\n\n')].join('\n'));
 
-  // Přehled obrazovek patří k rozsahu – před cenu
-  if (screens.length > 0) {
-    sections.push(`### Přehled obrazovek\n\n${buildScreensTable(screens)}`);
-  }
-
   // Celková cena (rozpad ceny; fakturace je níž v Platebních podmínkách)
   sections.push(
     [
@@ -175,7 +157,7 @@ export function generateMarkdown(input: MarkdownInput): string {
   );
 
   // Řízení projektu: jen hodnota pro klienta (text z nastavení)
-  sections.push(`### Řízení projektu\n\n${settings.md_pm_text.trim()}`);
+  sections.push(`### Řízení projektu\n\n${stripTitle(settings.md_pm_text, ['Řízení projektu', 'Projektový management'])}`);
 
   // Podpora po spuštění (volitelná, jen pokud je nastavena)
   if (project.sla_monthly_fee > 0) {
@@ -183,7 +165,7 @@ export function generateMarkdown(input: MarkdownInput): string {
       [
         `### Podpora po spuštění`,
         ``,
-        `Po spuštění se o web dál staráme za měsíční paušál **${formatCurrencyMd(project.sla_monthly_fee)}/měsíc** (v ceně je zahrnuto ${summary.months} měs.). ${settings.md_support_text.trim()}`,
+        `Po spuštění se o web dál staráme za měsíční paušál **${formatCurrencyMd(project.sla_monthly_fee)}/měsíc** (v ceně je zahrnuto ${summary.months} měs.). ${stripTitle(settings.md_support_text, ['Podpora po spuštění', 'SLA'])}`,
       ].join('\n'),
     );
   }
@@ -225,7 +207,7 @@ export function generateMarkdown(input: MarkdownInput): string {
     [
       `### Platební podmínky`,
       ``,
-      settings.md_payment_terms.trim(),
+      stripTitle(settings.md_payment_terms, ['Platební podmínky']),
       ``,
       `| Etapa | Fakturujeme | Částka |`,
       `|-------|-------------|--------|`,
@@ -239,23 +221,34 @@ export function generateMarkdown(input: MarkdownInput): string {
     ].join('\n'),
   );
 
-  // Co nabídka nezahrnuje: globální seznam + projektové doplnění
+  // Co nabídka nezahrnuje: text z košilky, prázdné = výchozí z Nastavení
   // (řádky bez odrážky doplníme o „- “, jinak by se slily do poslední položky)
-  const exclusions = [settings.md_exclusions.trim(), asBulletList(project.exclusions_extra)]
-    .filter(Boolean)
-    .join('\n');
+  const exclusions = asBulletList(
+    stripTitle(project.exclusions_extra.trim() || settings.md_exclusions, ['Co nabídka nezahrnuje']),
+  );
   if (exclusions) {
     sections.push(`### Co nabídka nezahrnuje\n\n${exclusions}`);
   }
 
   // Další postup: výzva k akci + závěr (Markdown z nastavení, předává se beze změny)
-  sections.push(`## Další postup\n\n${settings.md_next_steps.trim()}`);
+  sections.push(`## Další postup\n\n${stripTitle(settings.md_next_steps, ['Další postup'])}`);
 
-  // Kontakty (z nastavení)
-  sections.push(`## Na koho se v ŠG obracet\n\n${hardBreaks(settings.md_contacts)}`);
+  // Kontakty (z nastavení): jména jako H3, pod nimi obyčejný text
+  sections.push(`## Na koho se v ŠG obracet\n\n${hardBreaks(stripTitle(settings.md_contacts, ['Kontakty', 'Kontaktní osoby', 'Na koho se v ŠG obracet'], false))}`);
 
-  // Dodavatel (z nastavení)
-  sections.push(`### Dodavatel\n\n${hardBreaks(settings.md_supplier_info)}`);
+  // Základní informace o společnosti (z nastavení): jeden odstavec, položky oddělené čárkami
+  sections.push(
+    `### Základní informace o společnosti\n\n${plainCommaList(stripTitle(settings.md_supplier_info, ['Dodavatel', 'Základní informace o společnosti', 'Fakturační údaje'], false))}`,
+  );
+
+  // Přílohy: přehled obrazovek úplně na konci
+  if (screens.length > 0) {
+    sections.push(
+      [`## Přílohy`, ``, `### Přehled obrazovek`, ``, buildScreensTable(screens, definitions)].join(
+        '\n',
+      ),
+    );
+  }
 
   return sections.join('\n\n');
 }
@@ -287,22 +280,67 @@ function pluralInvoices(n: number): string {
   return 'faktur';
 }
 
-// Jednoduché odřádkování → tvrdý zlom řádku (jinak se v Google Docs řádky slijí)
+// Jednoduché odřádkování → tvrdý zlom řádku (jinak se v Google Docs řádky slijí);
+// řádky s nadpisem (#) se nechávají beze změny
 function hardBreaks(text: string): string {
-  return text.trim().replace(/([^\n])\n(?=[^\n])/g, '$1  \n');
+  return text
+    .trim()
+    .split('\n')
+    .map((line, i, lines) => {
+      const next = lines[i + 1];
+      const needsBreak = line !== '' && !line.startsWith('#') && next !== undefined && next !== '';
+      return needsBreak ? `${line}  ` : line;
+    })
+    .join('\n');
+}
+
+// Odstraní z textu z nastavení úvodní nadpis, který už generuje šablona (jinak je v nabídce dvakrát).
+// Maže úvodní řádky, které se shodují s některým z názvů (i s #, ** nebo dvojtečkou);
+// s anyHeading maže i jakýkoliv úvodní Markdown nadpis (#).
+function stripTitle(text: string, titles: string[], anyHeading = true): string {
+  const norm = (t: string) =>
+    t.replace(/^#+\s*/, '').replace(/\*\*/g, '').replace(/:\s*$/, '').trim().toLowerCase();
+  const known = titles.map(norm);
+  const lines = text.trim().split('\n');
+  while (lines.length > 0) {
+    const line = lines[0].trim();
+    if (line === '' || known.includes(norm(line)) || (anyHeading && /^#+\s/.test(line))) {
+      lines.shift();
+    } else {
+      break;
+    }
+  }
+  return lines.join('\n').trim();
+}
+
+// Víceřádkový text → jeden odstavec plaintextu, položky oddělené čárkami (bez Markdown formátování)
+function plainCommaList(text: string): string {
+  return text
+    .split('\n')
+    .map((line) => line.replace(/\*\*/g, '').trim())
+    .filter(Boolean)
+    .join(', ');
 }
 
 // --- Screens table helper ---
 
-function buildScreensTable(screens: ProjectScreen[]): string {
-  const allFlags: { key: keyof ProjectScreen; label: string }[] = [
-    // Názvy pro klienta; interní UI používá UX/UI terminologii
-    { key: 'ux_primary_desktop', label: 'Wireframe – desktop' },
-    { key: 'ux_secondary_mobile', label: 'Wireframe – mobil' },
-    { key: 'ui_primary_desktop', label: 'Grafický návrh – desktop' },
-    { key: 'ui_secondary_mobile', label: 'Grafický návrh – mobil' },
-    { key: 'webflow', label: 'Nasazení ve Webflow' },
-  ];
+function buildScreensTable(
+  screens: ProjectScreen[],
+  definitions: BillableProductDefinition[],
+): string {
+  // Záhlaví sloupců = stejné popisky jako položky v tabulkách rozsahu (z katalogu),
+  // záložně interní popisek typu práce
+  const flagKeys = [
+    'ux_primary_desktop',
+    'ux_secondary_mobile',
+    'ui_primary_desktop',
+    'ui_secondary_mobile',
+    'webflow',
+  ] as const;
+  const allFlags: { key: (typeof flagKeys)[number]; label: string }[] = flagKeys.map((key) => ({
+    key,
+    label: definitions.find((d) => d.source_key === key)?.label ?? WORK_TYPE_LABELS[key],
+  }));
 
   // Vynechat sloupce, kde žádná obrazovka nemá zaškrtnutý flag
   const flagLabels = allFlags.filter((f) =>
@@ -314,7 +352,7 @@ function buildScreensTable(screens: ProjectScreen[]): string {
 
   const rows = screens.map((s, i) => {
     const flags = flagLabels
-      .map((f) => (s[f.key] ? '✓' : '–'))
+      .map((f) => (s[f.key] ? '✅' : '–'))
       .join(' | ');
     return `| ${i + 1} | ${s.name} | ${flags} |`;
   });
