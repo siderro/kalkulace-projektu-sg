@@ -16,6 +16,7 @@ export function formatDecimal(value: number, decimals = 2): string {
   return value.toFixed(decimals).replace('.', ',');
 }
 
+
 /**
  * Format currency in Czech format.
  * e.g. 53136 → "53 136 Kč"
@@ -108,24 +109,32 @@ function splitDuration(
 }
 
 /**
- * Počet započatých měsíců trvání projektu (pro měsíční fakturaci PM).
+ * Počet měsíčních faktur za řízení projektu. Stejný práh jako zobrazení doby
+ * (formatDuration): „cca N měs.“ ↔ N faktur, „cca N,5 měs.“ ↔ N+1 faktur.
  * Vrací null, pokud nejsou známy oba termíny.
  */
 export function computeBillingMonths(startIso: string | null, endIso: string | null): number | null {
   const d = splitDuration(startIso, endIso);
   if (!d) return null;
-  return Math.max(1, d.months + (d.days > 0 ? 1 : 0));
+  return Math.max(1, d.months + (d.days >= 8 ? 1 : 0));
 }
 
+/**
+ * Doba trvání pro klienta – zaokrouhlená, aby nepůsobila jako výpočet na dny.
+ * e.g. 2 měs. 7 dní → "cca 2 měs.", 9 měs. 11 dní → "cca 9,5 měs.", 1 měs. 25 dní → "cca 2 měs.",
+ *      18 dní → "cca 3 týd.", 4 dny → "4 dny"
+ */
 export function formatDuration(startIso: string | null, endIso: string | null): string {
   const d = splitDuration(startIso, endIso);
   if (!d) return '';
   const { months, days } = d;
 
-  const parts: string[] = [];
-  if (months > 0) parts.push(`${months} měs.`);
-  if (days > 0) parts.push(`${days} ${days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'}`);
-  return parts.join(' ') || '0 dní';
+  if (months > 0) {
+    const rounded = months + (days >= 23 ? 1 : days >= 8 ? 0.5 : 0);
+    return `cca ${Number.isInteger(rounded) ? rounded : formatDecimal(rounded, 1)} měs.`;
+  }
+  if (days >= 7) return `cca ${Math.round(days / 7)} týd.`;
+  return `${days} ${days === 1 ? 'den' : days < 5 ? 'dny' : 'dní'}`;
 }
 
 /**

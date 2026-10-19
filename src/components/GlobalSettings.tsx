@@ -139,6 +139,14 @@ export function GlobalSettingsPanel({
                   onChange={(e) => update('default_sla_monthly_fee', Number(e.target.value))}
                 />
               </div>
+              <div className="field">
+                <label>Minimální měsíční faktura za řízení projektu (Kč)</label>
+                <input
+                  type="number"
+                  value={local.pm_min_monthly_invoice}
+                  onChange={(e) => update('pm_min_monthly_invoice', Number(e.target.value))}
+                />
+              </div>
               <label className="field field-checkbox">
                 <input
                   type="checkbox"
@@ -238,10 +246,26 @@ export function GlobalSettingsPanel({
               />
             </div>
             <div className="field" style={{ marginBottom: 16 }}>
-              <label>Reference</label>
+              <label>Reference (Markdown seznam; prázdné = sekce se netiskne)</label>
               <textarea
                 value={local.md_references}
                 onChange={(e) => update('md_references', e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="field" style={{ marginBottom: 16 }}>
+              <label>Co nabídka nezahrnuje (Markdown seznam)</label>
+              <textarea
+                value={local.md_exclusions}
+                onChange={(e) => update('md_exclusions', e.target.value)}
+                rows={5}
+              />
+            </div>
+            <div className="field" style={{ marginBottom: 16 }}>
+              <label>Podpora po spuštění – co zahrnuje</label>
+              <textarea
+                value={local.md_support_text}
+                onChange={(e) => update('md_support_text', e.target.value)}
                 rows={3}
               />
             </div>

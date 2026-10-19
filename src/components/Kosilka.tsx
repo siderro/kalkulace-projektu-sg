@@ -105,6 +105,11 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
       </div>
 
       <div className="form-grid">
+        {field('Klient (firma)', 'client_name')}
+        {field('Kontaktní osoba klienta', 'client_contact')}
+
+        <div className="form-divider" />
+
         {field('Verze', 'version_label')}
         {field('Datum projektu', 'project_date', 'date')}
 
@@ -132,6 +137,8 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
         <div className="form-divider" />
 
         {field('Cíl projektu (zobrazí se v nabídce)', 'goal', 'textarea')}
+        {field('Nezahrnuje navíc (doplní globální seznam)', 'exclusions_extra', 'textarea')}
+        {field('Reference pro tuto nabídku (přepíše výchozí)', 'references_override', 'textarea')}
         {field('Poznámky', 'notes', 'textarea')}
       </div>
     </div>

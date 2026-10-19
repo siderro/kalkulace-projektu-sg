@@ -15,6 +15,7 @@ export const DEFAULT_GLOBAL_SETTINGS: Omit<GlobalSettings, 'id'> = {
   default_pm_percent: 10,
   default_sla_monthly_fee: 0,
   default_first_mobile_set: false,
+  pm_min_monthly_invoice: 5000,
   md_supplier_info: `Švejda Goldmann, s.r.o.
 Pernerova 293/11
 186 00 Praha 8
@@ -34,8 +35,14 @@ david@svejda-goldmann.cz
 **Strategie a rozpočet**
 Jakub Goldmann, CEO 777 907 719
 jakub@svejda-goldmann.cz`,
-  md_references: `Vybrané projekty na vyžádání.`,
-  md_payment_terms: `Nic nefakturujeme předem. Fakturu za každou etapu vystavujeme až po jejím uzavření a vašem schválení. Řízení projektu fakturujeme průběžně po měsících, abyste měli náklady rozložené v čase. Splatnost faktur je 14 dní.`,
+  md_references: ``,
+  md_exclusions: `- Copywriting a tvorba textů
+- Fotografie, ilustrace a videa
+- Hosting, domény a licence (fonty, pluginy)
+- Plnění obsahu do redakčního systému
+- Překlady do dalších jazyků`,
+  md_support_text: `Zahrnuje reakci na vaše požadavky do 2 pracovních dnů, pravidelné aktualizace a drobné úpravy obsahu v rozsahu do 2 hodin měsíčně.`,
+  md_payment_terms: `Nic nefakturujeme předem. Fakturu za každou etapu vystavujeme až po jejím uzavření a vašem schválení. Splatnost faktur je 14 dní.`,
   md_pm_text: `Po celou dobu projektu máte jednoho kontaktního člověka – Lydii Tomajkovou. Každý týden dostanete krátký status, hlídáme termíny, rozpočet i rozsah a koordinujeme celý tým tak, abyste se nemuseli starat o nic jiného než o zpětnou vazbu.`,
   md_next_steps: `1. Potvrdíte nám nabídku (stačí e-mailem).
 2. Domluvíme termín kick-off schůzky.

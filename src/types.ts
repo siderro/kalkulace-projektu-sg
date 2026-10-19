@@ -11,9 +11,12 @@ export interface GlobalSettings {
   default_pm_percent: number;
   default_sla_monthly_fee: number;
   default_first_mobile_set: boolean;
+  pm_min_monthly_invoice: number; // pod touto měsíční částkou se PM v nabídce rozpočítá do etap
   md_supplier_info: string;
   md_contacts: string;
   md_references: string;
+  md_exclusions: string;
+  md_support_text: string;
   md_payment_terms: string;
   md_pm_text: string;
   md_next_steps: string;
@@ -82,6 +85,10 @@ export interface Project {
   start_date: string | null; // ISO date string
   end_date: string | null; // ISO date string
   goal: string; // cíl / zadání projektu slovy klienta
+  client_name: string;
+  client_contact: string;
+  exclusions_extra: string; // projektové doplnění k „Co nabídka nezahrnuje“
+  references_override: string; // přepíše globální reference, pokud je vyplněno
   notes: string;
   created_by: string;
   created_at: string;
@@ -130,7 +137,7 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
   pruzkum_a_pozice: 'Průzkum a pozice',
   koncept: 'Koncept',
   vizualni_design: 'Vizuální design',
-  programming: 'Programming',
+  programming: 'Vývoj a implementace',
 };
 
 // --- Work type labels for display ---

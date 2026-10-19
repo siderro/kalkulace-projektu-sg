@@ -13,14 +13,21 @@ create table global_settings (
   default_pm_percent numeric not null default 10,
   default_sla_monthly_fee numeric not null default 0,
   default_first_mobile_set boolean not null default false,
+  pm_min_monthly_invoice numeric not null default 5000,
   md_supplier_info text not null default '**Švejda & Goldmann s.r.o.**
 Sídlo: Karlovo náměstí 290/16, 120 00 Praha 2
 IČO: 09831193
 DIČ: CZ09831193',
   md_contacts text not null default '- Jan Švejda — jan@svejda-goldmann.cz
 - Jakub Goldmann — jakub@svejda-goldmann.cz',
-  md_references text not null default 'Vybrané projekty na vyžádání.',
-  md_payment_terms text not null default 'Nic nefakturujeme předem. Fakturu za každou etapu vystavujeme až po jejím uzavření a vašem schválení. Řízení projektu fakturujeme průběžně po měsících, abyste měli náklady rozložené v čase. Splatnost faktur je 14 dní.',
+  md_references text not null default '',
+  md_exclusions text not null default '- Copywriting a tvorba textů
+- Fotografie, ilustrace a videa
+- Hosting, domény a licence (fonty, pluginy)
+- Plnění obsahu do redakčního systému
+- Překlady do dalších jazyků',
+  md_support_text text not null default 'Zahrnuje reakci na vaše požadavky do 2 pracovních dnů, pravidelné aktualizace a drobné úpravy obsahu v rozsahu do 2 hodin měsíčně.',
+  md_payment_terms text not null default 'Nic nefakturujeme předem. Fakturu za každou etapu vystavujeme až po jejím uzavření a vašem schválení. Splatnost faktur je 14 dní.',
   md_pm_text text not null default 'Po celou dobu projektu máte jednoho kontaktního člověka – Lydii Tomajkovou. Každý týden dostanete krátký status, hlídáme termíny, rozpočet i rozsah a koordinujeme celý tým tak, abyste se nemuseli starat o nic jiného než o zpětnou vazbu.',
   md_next_steps text not null default '1. Potvrdíte nám nabídku (stačí e-mailem).
 2. Domluvíme termín kick-off schůzky.
@@ -99,6 +106,10 @@ create table projects (
   start_date date,
   end_date date,
   goal text not null default '',
+  client_name text not null default '',
+  client_contact text not null default '',
+  exclusions_extra text not null default '',
+  references_override text not null default '',
   notes text not null default '',
   created_by text not null default '',
   created_at timestamptz not null default now(),
