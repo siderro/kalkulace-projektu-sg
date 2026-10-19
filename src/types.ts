@@ -14,6 +14,9 @@ export interface GlobalSettings {
   md_supplier_info: string;
   md_contacts: string;
   md_references: string;
+  md_payment_terms: string;
+  md_pm_text: string;
+  md_next_steps: string;
 }
 
 // --- Screen Complexity Calibration ---
@@ -78,6 +81,7 @@ export interface Project {
   sla_months: number;
   start_date: string | null; // ISO date string
   end_date: string | null; // ISO date string
+  goal: string; // cíl / zadání projektu slovy klienta
   notes: string;
   created_by: string;
   created_at: string;

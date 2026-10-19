@@ -160,7 +160,6 @@ export default function App() {
             <span className="app-title-meta">
               {' '}{formatCurrency(summary.projectTotal)}
               {' / '}{formatDecimal(summary.totalMd, 1)} MD
-              {' / '}{summary.months} měs.
             </span>
           )}
         </span>

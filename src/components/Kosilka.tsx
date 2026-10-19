@@ -123,14 +123,15 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
 
         <div className="form-divider" />
 
-        {field('SLA měsíční paušál (Kč)', 'sla_monthly_fee', 'number', String(settings.default_sla_monthly_fee), settings.default_sla_monthly_fee)}
-        {field('SLA počet měsíců', 'sla_months', 'number', '1', 1)}
+        {field('Podpora po spuštění (Kč/měs.)', 'sla_monthly_fee', 'number', String(settings.default_sla_monthly_fee), settings.default_sla_monthly_fee)}
+        {field('Podpora po spuštění – počet měsíců', 'sla_months', 'number', '1', 1)}
         {field('Začátek projektu', 'start_date', 'date')}
         {field('Konec projektu', 'end_date', 'date')}
         {field('První mobilní sada', 'first_mobile_set', 'checkbox', settings.default_first_mobile_set ? 'ano' : 'ne')}
 
         <div className="form-divider" />
 
+        {field('Cíl projektu (zobrazí se v nabídce)', 'goal', 'textarea')}
         {field('Poznámky', 'notes', 'textarea')}
       </div>
     </div>

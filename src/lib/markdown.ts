@@ -12,7 +12,13 @@ import {
   SECTION_LABELS,
 } from '../types';
 import { type ProjectSummary, computeAdjustedItemPrice } from './calculations';
-import { formatCzechDate, formatCurrencyMd, formatDecimal, formatDuration } from './formatting';
+import {
+  computeBillingMonths,
+  formatCzechDate,
+  formatCurrencyMd,
+  formatDecimal,
+  formatDuration,
+} from './formatting';
 
 export interface MarkdownInput {
   project: Project;
@@ -48,8 +54,10 @@ export function generateMarkdown(input: MarkdownInput): string {
 
   sections.push(`# Cenový odhad – ${project.name}`);
 
-  // Kontakty (z nastavení)
-  sections.push(`## Na koho se v ŠG obracet\n\n${settings.md_contacts}`);
+  // Cíl projektu slovy klienta (pokud je vyplněn)
+  if (project.goal.trim()) {
+    sections.push(`## Cíl projektu\n\n${project.goal.trim()}`);
+  }
 
   // Shrnutí: výčet rozsahu, termíny, cena
   const firstScreenDerived = enabledDefs.findIndex(
@@ -57,14 +65,14 @@ export function generateMarkdown(input: MarkdownInput): string {
   );
   const scopeBullets = enabledDefs.map(({ def }, i) =>
     i === firstScreenDerived && screens.length > 0
-      ? `- ${def.label} – scope stránek je definován v příloze`
+      ? `- ${def.label} – scope stránek je definován v tabulce`
       : `- ${def.label}`,
   );
   const termLines = [
-    ...(project.start_date ? [`Začátek projektu: ${formatCzechDate(project.start_date)}`] : []),
-    ...(project.end_date ? [`Konec projektu: ${formatCzechDate(project.end_date)}`] : []),
+    ...(project.start_date ? [`Začátek projektu: **${formatCzechDate(project.start_date)}**`] : []),
+    ...(project.end_date ? [`Předpokládané dokončení: **${formatCzechDate(project.end_date)}**`] : []),
     ...(formatDuration(project.start_date, project.end_date)
-      ? [`Celková doba: ${formatDuration(project.start_date, project.end_date)}`]
+      ? [`Celková doba: **${formatDuration(project.start_date, project.end_date)}**`]
       : []),
   ];
   sections.push(
@@ -72,9 +80,16 @@ export function generateMarkdown(input: MarkdownInput): string {
       `## Shrnutí společného projektu`,
       ``,
       ...scopeBullets,
-      ...(termLines.length > 0 ? [``, termLines.join('  \n')] : []),
+      ...(termLines.length > 0
+        ? [
+            ``,
+            termLines.join('  \n'),
+            ``,
+            `Termíny platí při dodání podkladů a zpětné vazby do 5 pracovních dnů od předání každé fáze.`,
+          ]
+        : []),
       ``,
-      `**Celková cena za projekt: ${formatCurrencyMd(summary.projectTotal)}** (bez DPH)`,
+      `Celková cena za projekt: **${formatCurrencyMd(summary.projectTotal)}** (bez DPH)`,
     ].join('\n'),
   );
 
@@ -87,6 +102,8 @@ export function generateMarkdown(input: MarkdownInput): string {
   ];
 
   const sectionBlocks: string[] = [];
+  // Etapy pro fakturační milníky (etapa = sekce nabídky)
+  const stages: { label: string; total: number }[] = [];
   for (const sectionKey of sectionKeys) {
     const sectionItems = enabledDefs.filter(
       ({ def }) => def.section_key === sectionKey,
@@ -105,6 +122,7 @@ export function generateMarkdown(input: MarkdownInput): string {
       (sum, { item }) => sum + adjusted(item.price_value),
       0,
     );
+    stages.push({ label: sectionLabel, total: sectionTotal });
 
     sectionBlocks.push(
       [
@@ -123,7 +141,7 @@ export function generateMarkdown(input: MarkdownInput): string {
   // Celková cena
   sections.push(
     [
-      `## Celková cena`,
+      `### Celková cena`,
       ``,
       `| | Cena |`,
       `|---|---|`,
@@ -131,37 +149,72 @@ export function generateMarkdown(input: MarkdownInput): string {
       `| Project management (${project.pm_percent} %) | ${formatCurrencyMd(summary.pmAmount)} |`,
       ...(summary.slaTotal > 0
         ? [
-            `| SLA (${summary.months} měs. × ${formatCurrencyMd(summary.slaMonthlyFee)}) | ${formatCurrencyMd(summary.slaTotal)} |`,
+            `| Podpora po spuštění (${summary.months} měs. × ${formatCurrencyMd(summary.slaMonthlyFee)}) | ${formatCurrencyMd(summary.slaTotal)} |`,
           ]
         : []),
       `| **Celková cena projektu** (bez DPH) | **${formatCurrencyMd(summary.projectTotal)}** |`,
     ].join('\n'),
   );
 
-  // Vysvětlení PM
+  // PM se fakturuje měsíčně po dobu projektu. Měsíční částka se tiskne jen jako sazba
+  // za prodloužení – nikdy jako součin, aby zaokrouhlení nerozbilo součet.
+  const billingMonths = computeBillingMonths(project.start_date, project.end_date);
+  const pmMonthly = billingMonths ? Math.round(summary.pmAmount / billingMonths) : null;
+  const pmBillingLabel = billingMonths
+    ? `měsíčně, ${billingMonths} ${pluralInvoices(billingMonths)}`
+    : `měsíčně po dobu projektu`;
+
+  // Přehled obrazovek (bez složitosti)
+  if (screens.length > 0) {
+    sections.push(`### Přehled obrazovek\n\n${buildScreensTable(screens)}`);
+  }
+
+  // Project management: co klient dostane (text z nastavení) + měsíční fakturace + prodloužení
+  const pmBillingParagraph =
+    billingMonths && pmMonthly
+      ? `Řízení projektu (${formatCurrencyMd(summary.pmAmount)}) fakturujeme průběžně – ${billingMonths} ${pluralInvoices(billingMonths)}, za každý započatý měsíc projektu. Částka vychází z předpokládané doby trvání projektu. Pokud by se projekt prodloužil z důvodů na straně klienta, dovolíme si za každý další započatý měsíc účtovat ${formatCurrencyMd(pmMonthly)}; vždy vás na to upozorníme předem.`
+      : `Řízení projektu (${formatCurrencyMd(summary.pmAmount)}) fakturujeme průběžně po měsících po dobu trvání projektu.`;
   sections.push(
-    [
-      `## Project management`,
-      ``,
-      `Project management je kalkulován jako ${project.pm_percent} % z mezisoučtu. Zahrnuje řízení projektu, komunikaci s klientem, koordinaci týmu a průběžný reporting.`,
-    ].join('\n'),
+    [`### Project management`, ``, settings.md_pm_text.trim(), ``, pmBillingParagraph].join('\n'),
   );
 
-  // Vysvětlení SLA
+  // Podpora po spuštění (volitelná, jen pokud je nastavena)
   if (project.sla_monthly_fee > 0) {
     sections.push(
       [
-        `## SLA a průběžná podpora`,
+        `### Podpora po spuštění`,
         ``,
-        `Měsíční paušál za SLA a průběžnou podporu: ${formatCurrencyMd(project.sla_monthly_fee)}/měsíc, po dobu ${summary.months} měs. po spuštění. SLA zahrnuje garantovanou dobu reakce, pravidelnou údržbu a prioritní řešení požadavků.`,
+        `Po spuštění se o web dál staráme za měsíční paušál **${formatCurrencyMd(project.sla_monthly_fee)}/měsíc** (v ceně je zahrnuto ${summary.months} měs.). Zahrnuje garantovanou dobu reakce, pravidelnou údržbu a prioritní řešení požadavků.`,
       ].join('\n'),
     );
   }
 
+  // Platební podmínky (z nastavení) + fakturační milníky
+  const milestoneRows = [
+    ...stages.map(
+      ({ label, total }) => `| ${label} | po schválení etapy | ${formatCurrencyMd(total)} |`,
+    ),
+    `| Project management | ${pmBillingLabel} | ${formatCurrencyMd(summary.pmAmount)} |`,
+    ...(summary.slaTotal > 0
+      ? [`| Podpora po spuštění | měsíčně po spuštění | ${formatCurrencyMd(summary.slaMonthlyFee)}/měs. |`]
+      : []),
+  ];
+  sections.push(
+    [
+      `### Platební podmínky`,
+      ``,
+      settings.md_payment_terms.trim(),
+      ``,
+      `| Etapa | Fakturujeme | Částka |`,
+      `|-------|-------------|--------|`,
+      ...milestoneRows,
+    ].join('\n'),
+  );
+
   // Další informace
   sections.push(
     [
-      `## Další informace`,
+      `### Další informace`,
       ``,
       `- Všechny ceny jsou uvedeny bez DPH.`,
       `- Cenový odhad je platný 30 dní od data vystavení.`,
@@ -169,15 +222,28 @@ export function generateMarkdown(input: MarkdownInput): string {
     ].join('\n'),
   );
 
-  // Dodavatel (z nastavení)
-  sections.push(`## Dodavatel\n\n${settings.md_supplier_info}`);
+  // Další postup: výzva k akci + závěr (Markdown z nastavení, předává se beze změny)
+  sections.push(`## Další postup\n\n${settings.md_next_steps.trim()}`);
 
-  // Příloha: přehled obrazovek (bez složitosti)
-  if (screens.length > 0) {
-    sections.push(`## Příloha: Přehled obrazovek\n\n${buildScreensTable(screens)}`);
-  }
+  // Kontakty (z nastavení)
+  sections.push(`## Na koho se v ŠG obracet\n\n${hardBreaks(settings.md_contacts)}`);
+
+  // Dodavatel (z nastavení)
+  sections.push(`### Dodavatel\n\n${hardBreaks(settings.md_supplier_info)}`);
 
   return sections.join('\n\n');
+}
+
+// Skloňování: 1 faktura, 2–4 faktury, 5+ faktur
+function pluralInvoices(n: number): string {
+  if (n === 1) return 'faktura';
+  if (n >= 2 && n <= 4) return 'faktury';
+  return 'faktur';
+}
+
+// Jednoduché odřádkování → tvrdý zlom řádku (jinak se v Google Docs řádky slijí)
+function hardBreaks(text: string): string {
+  return text.trim().replace(/([^\n])\n(?=[^\n])/g, '$1  \n');
 }
 
 // --- Screens table helper ---

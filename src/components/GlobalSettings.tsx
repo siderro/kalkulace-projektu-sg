@@ -132,7 +132,7 @@ export function GlobalSettingsPanel({
                 />
               </div>
               <div className="field">
-                <label>Výchozí SLA měsíční paušál (Kč)</label>
+                <label>Výchozí podpora po spuštění (Kč/měs.)</label>
                 <input
                   type="number"
                   value={local.default_sla_monthly_fee}
@@ -243,6 +243,30 @@ export function GlobalSettingsPanel({
                 value={local.md_references}
                 onChange={(e) => update('md_references', e.target.value)}
                 rows={3}
+              />
+            </div>
+            <div className="field" style={{ marginBottom: 16 }}>
+              <label>Project management (text pod tabulkou cen)</label>
+              <textarea
+                value={local.md_pm_text}
+                onChange={(e) => update('md_pm_text', e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="field" style={{ marginBottom: 16 }}>
+              <label>Platební podmínky</label>
+              <textarea
+                value={local.md_payment_terms}
+                onChange={(e) => update('md_payment_terms', e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="field" style={{ marginBottom: 16 }}>
+              <label>Další postup (Markdown, např. číslovaný seznam)</label>
+              <textarea
+                value={local.md_next_steps}
+                onChange={(e) => update('md_next_steps', e.target.value)}
+                rows={6}
               />
             </div>
             <button

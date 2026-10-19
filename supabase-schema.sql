@@ -10,8 +10,8 @@ create extension if not exists "uuid-ossp";
 create table global_settings (
   id uuid primary key default uuid_generate_v4(),
   default_hourly_rate numeric not null default 1845,
-  default_pm_percent numeric not null default 8,
-  default_sla_monthly_fee numeric not null default 900,
+  default_pm_percent numeric not null default 10,
+  default_sla_monthly_fee numeric not null default 0,
   default_first_mobile_set boolean not null default false,
   md_supplier_info text not null default '**Švejda & Goldmann s.r.o.**
 Sídlo: Karlovo náměstí 290/16, 120 00 Praha 2
@@ -19,14 +19,22 @@ IČO: 09831193
 DIČ: CZ09831193',
   md_contacts text not null default '- Jan Švejda — jan@svejda-goldmann.cz
 - Jakub Goldmann — jakub@svejda-goldmann.cz',
-  md_references text not null default 'Vybrané projekty na vyžádání.'
+  md_references text not null default 'Vybrané projekty na vyžádání.',
+  md_payment_terms text not null default 'Nic nefakturujeme předem. Fakturu za každou etapu vystavujeme až po jejím uzavření a vašem schválení. Řízení projektu fakturujeme průběžně po měsících, abyste měli náklady rozložené v čase. Splatnost faktur je 14 dní.',
+  md_pm_text text not null default 'Po celou dobu projektu máte jednoho kontaktního člověka – Lydii Tomajkovou. Každý týden dostanete krátký status, hlídáme termíny, rozpočet i rozsah a koordinujeme celý tým tak, abyste se nemuseli starat o nic jiného než o zpětnou vazbu.',
+  md_next_steps text not null default '1. Potvrdíte nám nabídku (stačí e-mailem).
+2. Domluvíme termín kick-off schůzky.
+3. Na kick-offu si projdeme zadání, podklady a harmonogram.
+4. Startujeme první etapou projektu.
+
+Těšíme se na spolupráci.'
 );
 
 -- Insert default settings row
 insert into global_settings (
   default_hourly_rate, default_pm_percent,
   default_sla_monthly_fee, default_first_mobile_set
-) values (1845, 8, 900, false);
+) values (1845, 10, 0, false);
 
 -- 2. Screen Complexity Calibration
 create table screen_complexity_calibration (
@@ -84,12 +92,13 @@ create table projects (
   project_date date not null default current_date,
   hourly_rate numeric not null default 1845,
   complexity_coefficient_percent numeric not null default 100,
-  pm_percent numeric not null default 8,
+  pm_percent numeric not null default 10,
   first_mobile_set boolean not null default false,
-  sla_monthly_fee numeric not null default 900,
+  sla_monthly_fee numeric not null default 0,
   sla_months integer not null default 1,
   start_date date,
   end_date date,
+  goal text not null default '',
   notes text not null default '',
   created_by text not null default '',
   created_at timestamptz not null default now(),

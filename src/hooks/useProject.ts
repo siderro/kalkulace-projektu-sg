@@ -118,6 +118,7 @@ export function useProject(): ProjectState {
         sla_months: 1,
         start_date: null,
         end_date: null,
+        goal: '',
         notes: '',
         created_by: '',
         created_at: now,

@@ -80,11 +80,18 @@ export function todayIso(): string {
  * Doba mezi dvěma daty v celých měsících a zbylých dnech.
  * e.g. 2026-10-24 → 2026-12-31 = "2 měs. 7 dní"
  */
-export function formatDuration(startIso: string | null, endIso: string | null): string {
-  if (!startIso || !endIso) return '';
+/**
+ * Rozdělí dobu mezi dvěma daty na celé měsíce a zbývající dny.
+ * Vrací null, pokud některé datum chybí, je neplatné nebo konec předchází začátku.
+ */
+function splitDuration(
+  startIso: string | null,
+  endIso: string | null,
+): { months: number; days: number } | null {
+  if (!startIso || !endIso) return null;
   const start = new Date(startIso);
   const end = new Date(endIso);
-  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return '';
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return null;
 
   // Start + n měsíců; den se ořízne na konec cílového měsíce (31. 1. + 1 měs. = 28. 2.)
   const addMonths = (n: number) => {
@@ -97,6 +104,23 @@ export function formatDuration(startIso: string | null, endIso: string | null): 
     (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + (end.getUTCMonth() - start.getUTCMonth());
   if (addMonths(months) > end.getTime()) months -= 1;
   const days = Math.round((end.getTime() - addMonths(months)) / 86400000);
+  return { months, days };
+}
+
+/**
+ * Počet započatých měsíců trvání projektu (pro měsíční fakturaci PM).
+ * Vrací null, pokud nejsou známy oba termíny.
+ */
+export function computeBillingMonths(startIso: string | null, endIso: string | null): number | null {
+  const d = splitDuration(startIso, endIso);
+  if (!d) return null;
+  return Math.max(1, d.months + (d.days > 0 ? 1 : 0));
+}
+
+export function formatDuration(startIso: string | null, endIso: string | null): string {
+  const d = splitDuration(startIso, endIso);
+  if (!d) return '';
+  const { months, days } = d;
 
   const parts: string[] = [];
   if (months > 0) parts.push(`${months} měs.`);

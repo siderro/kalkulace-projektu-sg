@@ -201,7 +201,7 @@ export function BillableProducts({
               </tr>
               {summary.slaTotal > 0 && (
                 <tr>
-                  <td>SLA ({summary.months} měs. × {formatCurrency(summary.slaMonthlyFee)})</td>
+                  <td>Podpora po spuštění ({summary.months} měs. × {formatCurrency(summary.slaMonthlyFee)})</td>
                   <td className="col-price">{formatCurrency(summary.slaTotal)}</td>
                 </tr>
               )}

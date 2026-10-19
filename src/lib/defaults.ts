@@ -12,12 +12,37 @@ import type {
 
 export const DEFAULT_GLOBAL_SETTINGS: Omit<GlobalSettings, 'id'> = {
   default_hourly_rate: 1845,
-  default_pm_percent: 8,
-  default_sla_monthly_fee: 900,
+  default_pm_percent: 10,
+  default_sla_monthly_fee: 0,
   default_first_mobile_set: false,
-  md_supplier_info: `**Švejda & Goldmann s.r.o.**\nSídlo: Karlovo náměstí 290/16, 120 00 Praha 2\nIČO: 09831193\nDIČ: CZ09831193`,
-  md_contacts: `- Jan Švejda — jan@svejda-goldmann.cz\n- Jakub Goldmann — jakub@svejda-goldmann.cz`,
+  md_supplier_info: `Švejda Goldmann, s.r.o.
+Pernerova 293/11
+186 00 Praha 8
+IČ 04888189
+DIČ CZ04888189R
+u MS v Praze, C 254389
+DS hb6svz2
+Číslo účtu: 2700976062 / 2010 (Fio)`,
+  md_contacts: `**Termíny a průběh projektu**
+Lydia Tomajková, Project lead 776 376 585
+lydia.tomajkova@svejda-goldmann.cz
+
+**Design**
+David Švejda, Design lead 602 384 820
+david@svejda-goldmann.cz
+
+**Strategie a rozpočet**
+Jakub Goldmann, CEO 777 907 719
+jakub@svejda-goldmann.cz`,
   md_references: `Vybrané projekty na vyžádání.`,
+  md_payment_terms: `Nic nefakturujeme předem. Fakturu za každou etapu vystavujeme až po jejím uzavření a vašem schválení. Řízení projektu fakturujeme průběžně po měsících, abyste měli náklady rozložené v čase. Splatnost faktur je 14 dní.`,
+  md_pm_text: `Po celou dobu projektu máte jednoho kontaktního člověka – Lydii Tomajkovou. Každý týden dostanete krátký status, hlídáme termíny, rozpočet i rozsah a koordinujeme celý tým tak, abyste se nemuseli starat o nic jiného než o zpětnou vazbu.`,
+  md_next_steps: `1. Potvrdíte nám nabídku (stačí e-mailem).
+2. Domluvíme termín kick-off schůzky.
+3. Na kick-offu si projdeme zadání, podklady a harmonogram.
+4. Startujeme první etapou projektu.
+
+Těšíme se na spolupráci.`,
 };
 
 // --- Calibration defaults (base MD at complexity 5) ---
