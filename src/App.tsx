@@ -272,6 +272,8 @@ export default function App() {
             screens={screens}
             calibration={globals.calibration}
             onAdd={projectState.addScreen}
+            onAddMany={projectState.addScreens}
+            onSetFlagForAll={projectState.setFlagForAllScreens}
             onUpdate={projectState.updateScreen}
             onDuplicate={projectState.duplicateScreen}
             onRemove={handleRemoveScreen}

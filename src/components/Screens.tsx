@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { ProjectScreen, ScreenComplexityCalibration, WorkTypeKey } from '../types';
 import { COMPLEXITY_PERCENTAGES, WORK_TYPE_LABELS } from '../types';
 import { formatDecimal } from '../lib/formatting';
@@ -7,17 +7,19 @@ interface Props {
   screens: ProjectScreen[];
   calibration: ScreenComplexityCalibration[];
   onAdd: () => void;
+  onAddMany: (names: string[]) => void;
+  onSetFlagForAll: (field: keyof ProjectScreen, value: boolean) => void;
   onUpdate: (id: string, field: keyof ProjectScreen, value: unknown) => void;
   onDuplicate: (id: string) => void;
   onRemove: (id: string) => void;
 }
 
-const FLAG_KEYS: { key: keyof ProjectScreen; workType: WorkTypeKey }[] = [
-  { key: 'ux_primary_desktop', workType: 'ux_primary_desktop' },
-  { key: 'ux_secondary_mobile', workType: 'ux_secondary_mobile' },
-  { key: 'ui_primary_desktop', workType: 'ui_primary_desktop' },
-  { key: 'ui_secondary_mobile', workType: 'ui_secondary_mobile' },
-  { key: 'webflow', workType: 'webflow' },
+const FLAG_KEYS: { key: keyof ProjectScreen; workType: WorkTypeKey; device: string }[] = [
+  { key: 'ux_primary_desktop', workType: 'ux_primary_desktop', device: 'Desktop' },
+  { key: 'ux_secondary_mobile', workType: 'ux_secondary_mobile', device: 'Mobil' },
+  { key: 'ui_primary_desktop', workType: 'ui_primary_desktop', device: 'Desktop' },
+  { key: 'ui_secondary_mobile', workType: 'ui_secondary_mobile', device: 'Mobil' },
+  { key: 'webflow', workType: 'webflow', device: '' },
 ];
 
 function TextCell({ value, onChange, placeholder, className }: {
@@ -49,7 +51,57 @@ function TextCell({ value, onChange, placeholder, className }: {
   );
 }
 
-export function Screens({ screens, calibration, onAdd, onUpdate, onDuplicate, onRemove }: Props) {
+export function Screens({ screens, calibration, onAdd, onAddMany, onSetFlagForAll, onUpdate, onDuplicate, onRemove }: Props) {
+  // Po přidání obrazovky klávesou Enter přesunout kurzor do jejího názvu
+  const nameInputs = useRef(new Map<string, HTMLInputElement>());
+  const focusLast = useRef(false);
+  useEffect(() => {
+    if (!focusLast.current) return;
+    focusLast.current = false;
+    const last = screens[screens.length - 1];
+    if (last) nameInputs.current.get(last.id)?.focus();
+  }, [screens]);
+
+  function addAndFocus() {
+    focusLast.current = true;
+    onAdd();
+  }
+
+  // Vložení víc řádků do názvu (seznam obrazovek ze zadání) založí víc obrazovek
+  function handleNamePaste(e: React.ClipboardEvent<HTMLInputElement>, screen: ProjectScreen) {
+    const lines = e.clipboardData
+      .getData('text')
+      .split(/\r?\n/)
+      .map((l) => l.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').trim())
+      .filter(Boolean);
+    if (lines.length < 2) return;
+    e.preventDefault();
+    const [first, ...rest] = lines;
+    onUpdate(screen.id, 'name', screen.name.trim() ? `${screen.name}${first}` : first);
+    onAddMany(rest);
+  }
+
+  function toggleFlagForAll(key: keyof ProjectScreen) {
+    const allOn = screens.every((s) => s[key]);
+    onSetFlagForAll(key, !allOn);
+  }
+
+  function flagHeader(key: keyof ProjectScreen, label: string, rowSpan?: number) {
+    const allOn = screens.length > 0 && screens.every((s) => s[key]);
+    return (
+      <th key={key} className="flag-col" rowSpan={rowSpan}>
+        <button
+          type="button"
+          className="flag-header-btn"
+          onClick={() => toggleFlagForAll(key)}
+          title={allOn ? 'Vypnout u všech obrazovek' : 'Zapnout u všech obrazovek'}
+        >
+          {label}
+        </button>
+      </th>
+    );
+  }
+
   // Compute per-screen MD for display
   function computeScreenWorkTypeMd(
     complexity: number,
@@ -74,40 +126,56 @@ export function Screens({ screens, calibration, onAdd, onUpdate, onDuplicate, on
     <div className="screens-tab">
       <div className="screens-header">
         <h3>Obrazovky</h3>
-        <button onClick={onAdd} className="btn btn-primary">
+        <button onClick={addAndFocus} className="btn btn-primary">
           + Přidat obrazovku
         </button>
       </div>
 
       {screens.length === 0 ? (
-        <p className="empty-state">Zatím žádné obrazovky. Přidejte první obrazovku výše.</p>
+        <p className="empty-state">
+          Zatím žádné obrazovky. Přidejte první obrazovku výše. Do názvu jde vložit celý seznam obrazovek
+          ze zadání, každý řádek se stane jednou obrazovkou.
+        </p>
       ) : (
         <div className="screens-table-wrapper">
           <table className="table screens-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Název</th>
-                <th>Složitost</th>
-                {FLAG_KEYS.map((f) => (
-                  <th key={f.key} className="flag-col" title={WORK_TYPE_LABELS[f.workType]}>
-                    {WORK_TYPE_LABELS[f.workType].replace(/\(.*\)/, '').trim()}
-                  </th>
-                ))}
-                <th>Poznámka</th>
-                <th></th>
+                <th rowSpan={2}>#</th>
+                <th rowSpan={2}>Název</th>
+                <th rowSpan={2}>Složitost</th>
+                <th colSpan={2} className="flag-group">UX</th>
+                <th colSpan={2} className="flag-group">UI</th>
+                {flagHeader('webflow', WORK_TYPE_LABELS.webflow, 2)}
+                <th rowSpan={2}>Poznámka</th>
+                <th rowSpan={2}></th>
+              </tr>
+              <tr>
+                {FLAG_KEYS.filter((f) => f.device).map((f) => flagHeader(f.key, f.device))}
               </tr>
             </thead>
             <tbody>
               {screens.map((screen, idx) => (
                 <tr key={screen.id}>
                   <td className="row-num">{idx + 1}</td>
-                  <TextCell
-                    value={screen.name}
-                    onChange={(val) => onUpdate(screen.id, 'name', val)}
-                    placeholder="Název obrazovky"
-                    className="name-cell"
-                  />
+                  <td className="name-cell">
+                    <input
+                      type="text"
+                      ref={(el) => {
+                        if (el) nameInputs.current.set(screen.id, el);
+                        else nameInputs.current.delete(screen.id);
+                      }}
+                      value={screen.name}
+                      onChange={(e) => onUpdate(screen.id, 'name', e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && idx === screens.length - 1) addAndFocus();
+                        else if (e.key === 'Enter') nameInputs.current.get(screens[idx + 1].id)?.focus();
+                      }}
+                      onPaste={(e) => handleNamePaste(e, screen)}
+                      placeholder="Název obrazovky"
+                      className="input-inline input-flat"
+                    />
+                  </td>
                   <td>
                     <select
                       value={screen.complexity}
@@ -118,7 +186,7 @@ export function Screens({ screens, calibration, onAdd, onUpdate, onDuplicate, on
                     >
                       {[1, 2, 3, 4, 5].map((c) => (
                         <option key={c} value={c}>
-                          {c}
+                          {c} ({Math.round((COMPLEXITY_PERCENTAGES[c] ?? 0) * 100)} %)
                         </option>
                       ))}
                     </select>
@@ -154,18 +222,11 @@ export function Screens({ screens, calibration, onAdd, onUpdate, onDuplicate, on
                     className="note-cell"
                   />
                   <td className="action-btns">
-                    <button
-                      className="btn btn-icon"
-                      onClick={() => onDuplicate(screen.id)}
-                      title="Duplikovat"
-                    >
-                      ⟐
+                    <button className="btn btn-small" onClick={() => onDuplicate(screen.id)}>
+                      Duplikovat
                     </button>
-                    <button
-                      className="btn btn-small btn-danger"
-                      onClick={() => onRemove(screen.id)}
-                    >
-                      X
+                    <button className="btn btn-small btn-danger" onClick={() => onRemove(screen.id)}>
+                      Smazat
                     </button>
                   </td>
                 </tr>

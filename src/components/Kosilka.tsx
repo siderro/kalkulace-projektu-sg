@@ -54,7 +54,7 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
           <textarea
             value={value as string}
             onChange={(e) => onUpdate(key, e.target.value)}
-            rows={3}
+            rows={4}
           />
         </div>
       );
@@ -133,46 +133,55 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
         />
       </div>
 
-      <div className="form-grid">
-        {field('Klient (firma)', 'client_name')}
-        {field('Kontaktní osoba klienta', 'client_contact')}
-
-        <div className="form-divider" />
-
-        {field('Verze', 'version_label')}
-        {field('Datum verze', 'project_date', 'date')}
-
-        <div className="form-divider" />
-
-        {field('Začátek projektu', 'start_date', 'date')}
-        {field('Konec projektu', 'end_date', 'date')}
-
-        <div className="form-divider" />
-
-        {field('Hodinová sazba (Kč)', 'hourly_rate', 'number', String(settings.default_hourly_rate), settings.default_hourly_rate)}
-        <div className="field">
-          <label>MD sazba (Kč) <span className="default-hint">hodinová × 8</span></label>
-          <input type="text" value={formatCurrency(mdRate)} disabled className="input-computed" />
+      <section className="kosilka-block">
+        <h4>Klient</h4>
+        <div className="form-grid">
+          {field('Klient (firma)', 'client_name')}
+          {field('Kontaktní osoba klienta', 'client_contact')}
         </div>
+      </section>
 
-        <div className="form-divider" />
+      <section className="kosilka-block">
+        <h4>Verze a termíny</h4>
+        <div className="form-grid">
+          {field('Verze', 'version_label')}
+          {field('Datum verze', 'project_date', 'date')}
+          {field('Začátek projektu', 'start_date', 'date')}
+          {field('Konec projektu', 'end_date', 'date')}
+        </div>
+      </section>
 
-        {field('Koeficient složitosti (%)', 'complexity_coefficient_percent', 'number', '100', 100)}
-        {field('PM procento (%)', 'pm_percent', 'number', String(settings.default_pm_percent), settings.default_pm_percent)}
+      <section className="kosilka-block">
+        <h4>Sazby a cena</h4>
+        <div className="form-grid">
+          {field('Hodinová sazba (Kč)', 'hourly_rate', 'number', String(settings.default_hourly_rate), settings.default_hourly_rate)}
+          <div className="field">
+            <label>MD sazba (Kč) <span className="default-hint">hodinová × 8</span></label>
+            <input type="text" value={formatCurrency(mdRate)} disabled className="input-computed" />
+          </div>
+          {field('Koeficient složitosti (%)', 'complexity_coefficient_percent', 'number', '100', 100)}
+          {field('PM procento (%)', 'pm_percent', 'number', String(settings.default_pm_percent), settings.default_pm_percent)}
+          {field('První mobilní sada', 'first_mobile_set', 'checkbox', settings.default_first_mobile_set ? 'ano' : 'ne')}
+        </div>
+      </section>
 
-        <div className="form-divider" />
+      <section className="kosilka-block">
+        <h4>Podpora po spuštění</h4>
+        <div className="form-grid">
+          {field('Paušál (Kč/měs.)', 'sla_monthly_fee', 'number', String(settings.default_sla_monthly_fee), settings.default_sla_monthly_fee)}
+          {field('Počet měsíců v ceně', 'sla_months', 'number', '1', 1)}
+        </div>
+      </section>
 
-        {field('Podpora po spuštění (Kč/měs.)', 'sla_monthly_fee', 'number', String(settings.default_sla_monthly_fee), settings.default_sla_monthly_fee)}
-        {field('Podpora po spuštění – počet měsíců', 'sla_months', 'number', '1', 1)}
-        {field('První mobilní sada', 'first_mobile_set', 'checkbox', settings.default_first_mobile_set ? 'ano' : 'ne')}
-
-        <div className="form-divider" />
-
-        {field('Cíl projektu (zobrazí se v nabídce)', 'goal', 'textarea')}
-        {defaultText('Podobné projekty, které jsme dělali', 'references_override', settings.md_references, 5)}
-        {defaultText('Co nabídka nezahrnuje', 'exclusions_extra', settings.md_exclusions, 6)}
-        {field('Poznámky', 'notes', 'textarea')}
-      </div>
+      <section className="kosilka-block">
+        <h4>Texty do nabídky</h4>
+        <div className="form-grid form-grid-texts">
+          {field('Cíl projektu', 'goal', 'textarea')}
+          {field('Poznámky', 'notes', 'textarea')}
+          {defaultText('Podobné projekty, které jsme dělali', 'references_override', settings.md_references, 6)}
+          {defaultText('Co nabídka nezahrnuje', 'exclusions_extra', settings.md_exclusions, 6)}
+        </div>
+      </section>
     </div>
   );
 }

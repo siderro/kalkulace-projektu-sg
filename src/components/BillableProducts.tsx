@@ -39,6 +39,8 @@ export function BillableProducts({
 }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [onlySelected, setOnlySelected] = useState(false);
+  const selectedCount = items.filter((i) => i.enabled).length;
 
   const defMap = new Map(definitions.map((d) => [d.id, d]));
 
@@ -58,7 +60,7 @@ export function BillableProducts({
   function renderSection(sectionKey: SectionKey) {
     const sectionItems = items.filter((item) => {
       const def = defMap.get(item.product_definition_id);
-      return def?.section_key === sectionKey;
+      return def?.section_key === sectionKey && (!onlySelected || item.enabled);
     });
 
     if (sectionItems.length === 0) return null;
@@ -70,15 +72,14 @@ export function BillableProducts({
     return (
       <div key={sectionKey} className="billable-section">
         <h4>{SECTION_LABELS[sectionKey]}</h4>
-        <table className="table">
+        <table className="table billable-table">
           <thead>
             <tr>
               <th className="col-check"></th>
               <th>Položka</th>
-              <th>MD</th>
-              <th>Cena</th>
-              <th>Zdroj</th>
-              <th></th>
+              <th className="col-md">MD</th>
+              <th className="col-price">Cena</th>
+              <th className="col-reset"></th>
             </tr>
           </thead>
           <tbody>
@@ -86,7 +87,6 @@ export function BillableProducts({
               const def = defMap.get(item.product_definition_id);
               if (!def) return null;
 
-              const sourceLabel = getSourceLabel(item.value_source);
               const isDerived = def.calculation_type === 'derived_from_screens';
               const isOverridden = item.overridden;
               const isEditing = editingId === item.id;
@@ -129,7 +129,7 @@ export function BillableProducts({
                       <span
                         className={`md-value ${def.override_allowed ? 'editable' : ''}`}
                         onClick={() => def.override_allowed && startEdit(item)}
-                        title={def.override_allowed ? 'Klikněte pro úpravu' : ''}
+                        title={def.override_allowed ? 'Klikněte pro ruční úpravu MD' : ''}
                       >
                         {formatDecimal(item.md_value)}
                       </span>
@@ -138,19 +138,14 @@ export function BillableProducts({
                   <td className="col-price">
                     {item.enabled ? formatCurrency(item.price_value) : '—'}
                   </td>
-                  <td className="col-source">
-                    <span className={`source-badge source-${item.value_source}`}>
-                      {sourceLabel}
-                    </span>
-                  </td>
-                  <td>
+                  <td className="col-reset">
                     {isOverridden && (
                       <button
                         className="btn btn-small"
                         onClick={() => onResetOverride(item.id)}
-                        title="Obnovit výchozí hodnotu"
+                        title="Vrátit vypočtenou nebo výchozí hodnotu MD"
                       >
-                        Reset
+                        Obnovit
                       </button>
                     )}
                   </td>
@@ -162,7 +157,7 @@ export function BillableProducts({
             <tr>
               <td colSpan={3}><strong>Celkem {SECTION_LABELS[sectionKey]}</strong></td>
               <td className="col-price"><strong>{formatCurrency(sectionTotal)}</strong></td>
-              <td colSpan={2} />
+              <td />
             </tr>
           </tfoot>
         </table>
@@ -174,8 +169,19 @@ export function BillableProducts({
     <div className="billable-tab">
       <div className="billable-header">
         <h3>Fakturovatelné položky</h3>
-        <button onClick={onDeselectAll} className="btn btn-small">Odznačit vše</button>
+        <div className="billable-actions">
+          <label className="field-checkbox">
+            <input type="checkbox" checked={onlySelected} onChange={(e) => setOnlySelected(e.target.checked)} />
+            Jen vybrané ({selectedCount})
+          </label>
+          <button onClick={onDeselectAll} className="btn btn-small">Odznačit vše</button>
+        </div>
       </div>
+      <p className="billable-legend">
+        <span className="legend-swatch row-derived" /> MD z obrazovek
+        <span className="legend-swatch row-overridden" /> MD ručně upravené
+        <span className="legend-note">MD upravíte kliknutím na hodnotu.</span>
+      </p>
 
       {SECTION_ORDER.map((sk) => renderSection(sk))}
 
@@ -215,17 +221,4 @@ export function BillableProducts({
       )}
     </div>
   );
-}
-
-function getSourceLabel(source: string): string {
-  switch (source) {
-    case 'manual_default':
-      return 'výchozí';
-    case 'derived_from_screens':
-      return 'z obrazovek';
-    case 'overridden_manual':
-      return 'přepsáno';
-    default:
-      return source;
-  }
 }

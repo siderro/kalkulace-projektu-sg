@@ -42,6 +42,8 @@ export interface ProjectState {
   // Screens
   setScreens: (screens: ProjectScreen[]) => void;
   addScreen: () => void;
+  addScreens: (names: string[]) => void;
+  setFlagForAllScreens: (field: keyof ProjectScreen, value: boolean) => void;
   updateScreen: (id: string, field: keyof ProjectScreen, value: unknown) => void;
   duplicateScreen: (id: string) => void;
   removeScreen: (id: string) => void;
@@ -183,24 +185,35 @@ export function useProject(): ProjectState {
     markDirty();
   }, [markDirty]);
 
-  const addScreen = useCallback(() => {
+  // Nové obrazovky přebírají složitost a zaškrtnutou práci z poslední obrazovky
+  const addScreens = useCallback((names: string[]) => {
     if (!project) return;
-    const newScreen: ProjectScreen = {
-      id: crypto.randomUUID(),
-      project_id: project.id,
-      name: '',
-      complexity: 3,
-      note: '',
-      ux_primary_desktop: false,
-      ux_secondary_mobile: false,
-      ui_primary_desktop: false,
-      ui_secondary_mobile: false,
-      webflow: false,
-      sort_order: screens.length,
-    };
-    setScreensState((prev) => [...prev, newScreen]);
+    setScreensState((prev) => {
+      const last = prev[prev.length - 1];
+      const added = names.map((name, i): ProjectScreen => ({
+        id: crypto.randomUUID(),
+        project_id: project.id,
+        name,
+        complexity: last?.complexity ?? 3,
+        note: '',
+        ux_primary_desktop: last?.ux_primary_desktop ?? false,
+        ux_secondary_mobile: last?.ux_secondary_mobile ?? false,
+        ui_primary_desktop: last?.ui_primary_desktop ?? false,
+        ui_secondary_mobile: last?.ui_secondary_mobile ?? false,
+        webflow: last?.webflow ?? false,
+        sort_order: prev.length + i,
+      }));
+      return [...prev, ...added];
+    });
     markDirty();
-  }, [project, screens.length, markDirty]);
+  }, [project, markDirty]);
+
+  const addScreen = useCallback(() => addScreens(['']), [addScreens]);
+
+  const setFlagForAllScreens = useCallback((field: keyof ProjectScreen, value: boolean) => {
+    setScreensState((prev) => prev.map((s) => ({ ...s, [field]: value })));
+    markDirty();
+  }, [markDirty]);
 
   const updateScreen = useCallback(
     (id: string, field: keyof ProjectScreen, value: unknown) => {
@@ -368,6 +381,8 @@ export function useProject(): ProjectState {
     updateProjectField,
     setScreens,
     addScreen,
+    addScreens,
+    setFlagForAllScreens,
     updateScreen,
     duplicateScreen,
     removeScreen,
