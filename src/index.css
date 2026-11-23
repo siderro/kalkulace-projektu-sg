@@ -371,6 +371,10 @@ h1, h2, h3, h4, h5, h6 {
   gap: 8px;
 }
 
+.input-with-button { display: flex; gap: 6px; }
+.input-with-button input { flex: 1; min-width: 0; }
+.field-error { color: var(--danger); font-size: 12px; }
+
 .input-computed {
   border: none !important;
   background: transparent !important;
@@ -417,6 +421,16 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 16px;
 }
 .project-list-header h2 { margin: 0; }
+.project-search {
+  flex: 1;
+  max-width: 360px;
+  margin: 0 16px 0 auto;
+  padding: 6px 8px;
+  font-size: 14px;
+  font-family: var(--font);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
 
 .table th.sortable-th {
   cursor: pointer;

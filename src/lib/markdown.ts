@@ -134,9 +134,11 @@ export function buildTemplateData(input: MarkdownInput): TemplateData {
   }
 
   // Reference a výluky: projektový přepis z košilky má přednost, prázdné = výchozí z Nastavení
-  const references = stripTitle(project.references_override.trim() || settings.md_references, [
-    'Referenční projekty', 'Reference', 'Podobné projekty', 'Podobné projekty, které jsme dělali',
-  ]);
+  const references = project.references_disabled
+    ? ''
+    : stripTitle(project.references_override.trim() || settings.md_references, [
+        'Referenční projekty', 'Reference', 'Podobné projekty', 'Podobné projekty, které jsme dělali',
+      ]);
   // (řádky bez odrážky doplníme o „- “, jinak by se slily do poslední položky)
   const exclusions = asBulletList(
     stripTitle(project.exclusions_extra.trim() || settings.md_exclusions, ['Co nabídka nezahrnuje']),
@@ -149,6 +151,9 @@ export function buildTemplateData(input: MarkdownInput): TemplateData {
     nazev: project.name,
     klient: project.client_name.trim(),
     kontakt_klienta: project.client_contact.trim(),
+    klient_adresa: project.client_address.trim(),
+    klient_ico: project.client_ico.trim(),
+    klient_dic: project.client_dic.trim(),
     cil: project.goal.trim(),
     rozsah: stages.flatMap(({ items }) => items.map(({ def }) => `- ${def.label}`)).join('\n'),
     terminy: termLines.join('  \n'),

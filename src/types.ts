@@ -82,6 +82,11 @@ export interface Project {
   goal: string; // cíl / zadání projektu slovy klienta
   client_name: string;
   client_contact: string;
+  client_ico: string;
+  client_address: string; // sídlo z ARES (lze přepsat)
+  client_dic: string;
+  references_disabled: boolean; // true = reference se do nabídky netisknou
+  offer_total: number; // celková cena nabídky, ukládá se při uložení (pro seznam projektů)
   exclusions_extra: string; // celý text „Co nabídka nezahrnuje“ (prázdné = výchozí z nastavení)
   references_override: string; // celý text referencí (prázdné = výchozí z nastavení)
   notes: string;

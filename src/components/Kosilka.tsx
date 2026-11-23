@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Project, GlobalSettings } from '../types';
 import { formatCurrency, generateProjectCode, projectCodeMatchesName } from '../lib/formatting';
+import { fetchAresCompany } from '../lib/ares';
 
 interface Props {
   project: Project;
@@ -22,6 +23,21 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
     }, 3000);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [project.name]);
+
+  // Načtení klienta z ARES podle IČO (přepíše název, sídlo a DIČ)
+  const [aresState, setAresState] = useState<{ loading: boolean; error: string }>({ loading: false, error: '' });
+  async function loadFromAres() {
+    setAresState({ loading: true, error: '' });
+    try {
+      const company = await fetchAresCompany(project.client_ico);
+      onUpdate('client_name', company.name);
+      onUpdate('client_address', company.address);
+      onUpdate('client_dic', company.dic);
+      setAresState({ loading: false, error: '' });
+    } catch (e) {
+      setAresState({ loading: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  }
 
   function field(
     label: string,
@@ -136,7 +152,29 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
       <section className="kosilka-block">
         <h4>Klient</h4>
         <div className="form-grid">
+          <div className="field">
+            <label>IČO klienta</label>
+            <div className="input-with-button">
+              <input
+                type="text"
+                value={project.client_ico}
+                onChange={(e) => onUpdate('client_ico', e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && project.client_ico.trim()) loadFromAres(); }}
+              />
+              <button
+                type="button"
+                className="btn btn-small"
+                onClick={loadFromAres}
+                disabled={!project.client_ico.trim() || aresState.loading}
+              >
+                {aresState.loading ? 'Načítám…' : 'Načíst z ARES'}
+              </button>
+            </div>
+            {aresState.error && <span className="field-error">{aresState.error}</span>}
+          </div>
           {field('Klient (firma)', 'client_name')}
+          {field('Sídlo', 'client_address')}
+          {field('DIČ', 'client_dic')}
           {field('Kontaktní osoba klienta', 'client_contact')}
         </div>
       </section>
@@ -178,7 +216,23 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
         <div className="form-grid form-grid-texts">
           {field('Cíl projektu', 'goal', 'textarea')}
           {field('Poznámky', 'notes', 'textarea')}
-          {defaultText('Podobné projekty, které jsme dělali', 'references_override', settings.md_references, 6)}
+          {project.references_disabled ? (
+            <div className="field">
+              <label>Podobné projekty, které jsme dělali</label>
+              <label className="field-checkbox">
+                <input type="checkbox" checked onChange={() => onUpdate('references_disabled', false)} />
+                Netisknout reference v této nabídce
+              </label>
+            </div>
+          ) : (
+            <div className="field">
+              {defaultText('Podobné projekty, které jsme dělali', 'references_override', settings.md_references, 6)}
+              <label className="field-checkbox">
+                <input type="checkbox" checked={false} onChange={() => onUpdate('references_disabled', true)} />
+                Netisknout reference v této nabídce
+              </label>
+            </div>
+          )}
           {defaultText('Co nabídka nezahrnuje', 'exclusions_extra', settings.md_exclusions, 6)}
         </div>
       </section>

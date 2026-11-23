@@ -135,6 +135,11 @@ export function useProject(): ProjectState {
         goal: '',
         client_name: '',
         client_contact: '',
+        client_ico: '',
+        client_address: '',
+        client_dic: '',
+        references_disabled: false,
+        offer_total: 0,
         exclusions_extra: settings.md_exclusions,
         references_override: settings.md_references,
         notes: '',
@@ -350,7 +355,8 @@ export function useProject(): ProjectState {
     const savedChange = changeCount.current;
     setLoading(true);
     try {
-      await upsertProject(project);
+      // Celková cena se ukládá kvůli seznamu projektů
+      await upsertProject({ ...project, offer_total: summary?.projectTotal ?? 0 });
       await saveProjectScreens(project.id, screens);
       await saveProjectBillableItems(project.id, billableItems);
       setSaveError(null);
@@ -364,7 +370,7 @@ export function useProject(): ProjectState {
       setLoading(false);
       return false;
     }
-  }, [project, screens, billableItems]);
+  }, [project, screens, billableItems, summary]);
 
   return {
     project,

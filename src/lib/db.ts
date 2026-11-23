@@ -3,6 +3,7 @@
 // ============================================================
 
 import { supabase } from './supabase';
+import { nextVersionLabel, todayIso } from './formatting';
 import type {
   GlobalSettings,
   ScreenComplexityCalibration,
@@ -180,7 +181,11 @@ export async function deleteProject(id: string): Promise<void> {
   if (error) console.error('deleteProject:', error);
 }
 
-export async function duplicateProject(projectId: string): Promise<string | null> {
+// Kopie projektu: 'copy' = nový projekt podle vzoru, 'version' = další verze téže nabídky
+export async function duplicateProject(
+  projectId: string,
+  mode: 'copy' | 'version' = 'copy',
+): Promise<string | null> {
   const [project, screens, items] = await Promise.all([
     fetchProject(projectId),
     fetchProjectScreens(projectId),
@@ -194,7 +199,9 @@ export async function duplicateProject(projectId: string): Promise<string | null
   const newProject: Project = {
     ...project,
     id: newProjectId,
-    name: `Kopie – ${project.name}`,
+    ...(mode === 'version'
+      ? { version_label: nextVersionLabel(project.version_label), project_date: todayIso() }
+      : { name: `Kopie – ${project.name}` }),
     created_at: now,
     updated_at: now,
   };

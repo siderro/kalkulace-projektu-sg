@@ -153,6 +153,16 @@ export function formatDuration(startIso: string | null, endIso: string | null): 
  * Format: YY-MM-slugified-name-UNIX
  */
 /**
+ * Další verze nabídky: zvýší poslední číslo v označení.
+ * e.g. "v1" → "v2", "1.0" → "1.1", "v2.3" → "v2.4", "" → "v2"
+ */
+export function nextVersionLabel(label: string): string {
+  const match = label.match(/^(.*?)(\d+)(\D*)$/);
+  if (!match) return label.trim() ? `${label.trim()} v2` : 'v2';
+  return `${match[1]}${Number(match[2]) + 1}${match[3]}`;
+}
+
+/**
  * Odpovídá kód projektu názvu? Kód má tvar „yy-mm-slug-čas“.
  */
 export function projectCodeMatchesName(code: string, name: string): boolean {
