@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { GlobalSettings, ScreenComplexityCalibration, BillableProductDefinition } from '../types';
 import {
   fetchGlobalSettings,
+  fetchOfferTemplate,
   updateGlobalSettings as updateGlobalSettingsDb,
   fetchCalibration,
   updateCalibrationRow,
@@ -13,6 +14,7 @@ import {
 
 export interface GlobalSettingsState {
   settings: GlobalSettings | null;
+  template: string;
   calibration: ScreenComplexityCalibration[];
   definitions: BillableProductDefinition[];
   loading: boolean;
@@ -27,18 +29,21 @@ export interface GlobalSettingsState {
 
 export function useGlobalSettings(): GlobalSettingsState {
   const [settings, setSettings] = useState<GlobalSettings | null>(null);
+  const [template, setTemplate] = useState('');
   const [calibration, setCalibration] = useState<ScreenComplexityCalibration[]>([]);
   const [definitions, setDefinitions] = useState<BillableProductDefinition[]>([]);
   const [loading, setLoading] = useState(true);
 
   const reload = useCallback(async () => {
     setLoading(true);
-    const [s, c, d] = await Promise.all([
+    const [s, t, c, d] = await Promise.all([
       fetchGlobalSettings(),
+      fetchOfferTemplate(),
       fetchCalibration(),
       fetchProductDefinitions(),
     ]);
     setSettings(s);
+    setTemplate(t);
     setCalibration(c);
     setDefinitions(d);
     setLoading(false);
@@ -97,6 +102,7 @@ export function useGlobalSettings(): GlobalSettingsState {
 
   return {
     settings,
+    template,
     calibration,
     definitions,
     loading,

@@ -12,6 +12,21 @@ import type {
   ProjectBillableItem,
 } from '../types';
 
+// --- Šablona nabídky (nahrává ji `npm run sablona`, aplikace ji jen čte) ---
+
+export async function fetchOfferTemplate(): Promise<string> {
+  const { data, error } = await supabase
+    .from('offer_templates')
+    .select('content')
+    .eq('key', 'nabidka')
+    .maybeSingle();
+  if (error) {
+    console.error('fetchOfferTemplate:', error);
+    return '';
+  }
+  return data?.content ?? '';
+}
+
 // --- Global Settings ---
 
 export async function fetchGlobalSettings(): Promise<GlobalSettings | null> {

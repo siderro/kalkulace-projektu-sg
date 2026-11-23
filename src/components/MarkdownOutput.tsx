@@ -16,6 +16,7 @@ interface Props {
   definitions: BillableProductDefinition[];
   summary: ProjectSummary;
   settings: GlobalSettings;
+  template: string;
 }
 
 export function MarkdownOutput({
@@ -25,6 +26,7 @@ export function MarkdownOutput({
   definitions,
   summary,
   settings,
+  template,
 }: Props) {
   const [copied, setCopied] = useState(false);
 
@@ -37,8 +39,8 @@ export function MarkdownOutput({
         definitions,
         summary,
         settings,
-      }),
-    [project, screens, billableItems, definitions, summary, settings],
+      }, template),
+    [project, screens, billableItems, definitions, summary, settings, template],
   );
 
   async function handleCopy() {
@@ -67,7 +69,13 @@ export function MarkdownOutput({
           {copied ? 'Zkopírováno!' : 'Kopírovat do schránky'}
         </button>
       </div>
-      <pre className="markdown-output">{markdown}</pre>
+      {template.trim() ? (
+        <pre className="markdown-output">{markdown}</pre>
+      ) : (
+        <div className="empty-state">
+          Šablona nabídky není nahraná. Nahraje se z počítače příkazem <code>npm run sablona</code>.
+        </div>
+      )}
     </div>
   );
 }

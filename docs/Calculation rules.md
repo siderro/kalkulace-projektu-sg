@@ -17,12 +17,7 @@ There is a global calibration rule for screen complexity.
 
 ### Base MD at complexity 5
 
-Example base MD values:
-- UX primary desktop: 0.9
-- UX secondary mobile: 0.4
-- UI primary desktop: 1.1
-- UI secondary mobile: 0.9
-- Webflow: 1.5
+Base MD values per work type are set in the app (Nastavení → Kalibrační tabulka).
 
 ### Complexity percentages
 

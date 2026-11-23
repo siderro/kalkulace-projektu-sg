@@ -12,14 +12,9 @@ export interface GlobalSettings {
   default_sla_monthly_fee: number;
   default_first_mobile_set: boolean;
   pm_min_monthly_invoice: number; // pod touto měsíční částkou se PM v nabídce rozpočítá do etap
-  md_supplier_info: string;
-  md_contacts: string;
+  // Ostatní texty nabídky jsou v šabloně (offer_templates), tady jen výchozí hodnoty pro košilku
   md_references: string;
   md_exclusions: string;
-  md_support_text: string;
-  md_payment_terms: string;
-  md_pm_text: string;
-  md_next_steps: string;
 }
 
 // --- Screen Complexity Calibration ---

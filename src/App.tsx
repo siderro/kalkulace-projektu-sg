@@ -229,6 +229,7 @@ export default function App() {
             definitions={globals.definitions}
             summary={summary}
             settings={globals.settings}
+            template={globals.template}
           />
         )}
       </main>

@@ -229,22 +229,10 @@ export function GlobalSettingsPanel({
         {activeTab === 'markdown' && (
           <div className="settings-section">
             <h3>Nastavení Markdown výstupu</h3>
-            <div className="field" style={{ marginBottom: 16 }}>
-              <label>Základní informace o společnosti (každý údaj na vlastní řádek; v nabídce se spojí čárkami)</label>
-              <textarea
-                value={local.md_supplier_info}
-                onChange={(e) => update('md_supplier_info', e.target.value)}
-                rows={8}
-              />
-            </div>
-            <div className="field" style={{ marginBottom: 16 }}>
-              <label>Na koho se v ŠG obracet (jméno jako „### Jméno“, pod ním role, telefon a e-mail na vlastních řádcích)</label>
-              <textarea
-                value={local.md_contacts}
-                onChange={(e) => update('md_contacts', e.target.value)}
-                rows={15}
-              />
-            </div>
+            <p style={{ marginBottom: 16 }}>
+              Texty nabídky jsou v šabloně <code>sablona/nabidka.md</code> (mimo git), do aplikace se nahrávají
+              příkazem <code>npm run sablona</code>. Tady jsou jen výchozí texty pro košilku nových projektů.
+            </p>
             <div className="field" style={{ marginBottom: 16 }}>
               <label>Výchozí reference pro nové projekty (upravují se v košilce)</label>
               <textarea
@@ -259,38 +247,6 @@ export function GlobalSettingsPanel({
                 value={local.md_exclusions}
                 onChange={(e) => update('md_exclusions', e.target.value)}
                 rows={5}
-              />
-            </div>
-            <div className="field" style={{ marginBottom: 16 }}>
-              <label>Podpora po spuštění – co zahrnuje</label>
-              <textarea
-                value={local.md_support_text}
-                onChange={(e) => update('md_support_text', e.target.value)}
-                rows={3}
-              />
-            </div>
-            <div className="field" style={{ marginBottom: 16 }}>
-              <label>Project management (text pod tabulkou cen)</label>
-              <textarea
-                value={local.md_pm_text}
-                onChange={(e) => update('md_pm_text', e.target.value)}
-                rows={3}
-              />
-            </div>
-            <div className="field" style={{ marginBottom: 16 }}>
-              <label>Platební podmínky</label>
-              <textarea
-                value={local.md_payment_terms}
-                onChange={(e) => update('md_payment_terms', e.target.value)}
-                rows={3}
-              />
-            </div>
-            <div className="field" style={{ marginBottom: 16 }}>
-              <label>Další postup (Markdown, např. číslovaný seznam)</label>
-              <textarea
-                value={local.md_next_steps}
-                onChange={(e) => update('md_next_steps', e.target.value)}
-                rows={6}
               />
             </div>
             <button

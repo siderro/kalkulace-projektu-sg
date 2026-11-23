@@ -9,55 +9,21 @@ create extension if not exists "uuid-ossp";
 -- 1. Global Settings (single row)
 create table global_settings (
   id uuid primary key default uuid_generate_v4(),
-  default_hourly_rate numeric not null default 1845,
+  default_hourly_rate numeric not null default 1000,
   default_pm_percent numeric not null default 10,
   default_sla_monthly_fee numeric not null default 0,
   default_first_mobile_set boolean not null default false,
   pm_min_monthly_invoice numeric not null default 5000,
-  md_supplier_info text not null default 'Švejda Goldmann, s.r.o.
-Pernerova 293/11
-186 00 Praha 8
-IČ 04888189
-DIČ CZ04888189
-u MS v Praze, C 254389
-DS hb6svz2
-Číslo účtu: 2700976062 / 2010 (Fio)',
-  md_contacts text not null default '### Lydia Tomajková
-Project lead, termíny a průběh projektu
-776 376 585
-lydia.tomajkova@svejda-goldmann.cz
-
-### David Švejda
-Design lead
-602 384 820
-david@svejda-goldmann.cz
-
-### Jakub Goldmann
-CEO, strategie a rozpočet
-777 907 719
-jakub@svejda-goldmann.cz',
+  -- Výchozí texty pro košilku nových projektů; ostatní texty nabídky jsou v offer_templates
   md_references text not null default '',
-  md_exclusions text not null default '- Copywriting a tvorba textů
-- Fotografie, ilustrace a videa
-- Hosting, domény a licence (fonty, pluginy)
-- Plnění obsahu do redakčního systému
-- Překlady do dalších jazyků',
-  md_support_text text not null default 'Zahrnuje reakci na vaše požadavky do 2 pracovních dnů, pravidelné aktualizace a drobné úpravy obsahu v rozsahu do 2 hodin měsíčně.',
-  md_payment_terms text not null default 'Nic nefakturujeme předem. Fakturu za každou etapu vystavujeme až po jejím uzavření a vašem schválení. Splatnost faktur je 14 dní.',
-  md_pm_text text not null default 'Po celou dobu projektu máte jednoho kontaktního člověka – **Lydii Tomajkovou** (776 376 585, lydia.tomajkova@svejda-goldmann.cz). Každý týden dostanete krátký status, hlídáme termíny, rozpočet i rozsah a koordinujeme celý tým tak, abyste se nemuseli starat o nic jiného než o zpětnou vazbu.',
-  md_next_steps text not null default '1. Potvrdíte nám nabídku (stačí e-mailem).
-2. Domluvíme termín kick-off schůzky.
-3. Na kick-offu si projdeme zadání, podklady a harmonogram.
-4. Startujeme první etapou projektu.
-
-Těšíme se na spolupráci.'
+  md_exclusions text not null default ''
 );
 
 -- Insert default settings row
 insert into global_settings (
   default_hourly_rate, default_pm_percent,
   default_sla_monthly_fee, default_first_mobile_set
-) values (1845, 10, 0, false);
+) values (1000, 10, 0, false);
 
 -- 2. Screen Complexity Calibration
 create table screen_complexity_calibration (
@@ -68,14 +34,14 @@ create table screen_complexity_calibration (
   sort_order integer not null default 0
 );
 
--- Insert default calibration values
+-- Výchozí kalibrace je jen zástupná, skutečné hodnoty se nastavují v aplikaci
 insert into screen_complexity_calibration (work_type_key, label, base_md_at_level_5, sort_order)
 values
-  ('ux_primary_desktop', 'UX primární (Desktop)', 0.9, 1),
-  ('ux_secondary_mobile', 'UX sekundární (Mobil)', 0.4, 2),
-  ('ui_primary_desktop', 'UI primární (Desktop)', 1.1, 3),
-  ('ui_secondary_mobile', 'UI sekundární (Mobil)', 0.9, 4),
-  ('webflow', 'Webflow', 1.5, 5);
+  ('ux_primary_desktop', 'UX primární (Desktop)', 1, 1),
+  ('ux_secondary_mobile', 'UX sekundární (Mobil)', 1, 2),
+  ('ui_primary_desktop', 'UI primární (Desktop)', 1, 3),
+  ('ui_secondary_mobile', 'UI sekundární (Mobil)', 1, 4),
+  ('webflow', 'Webflow', 1, 5);
 
 -- 3. Billable Product Definitions (catalog)
 create table billable_product_definitions (
@@ -93,18 +59,18 @@ create table billable_product_definitions (
   active boolean not null default true
 );
 
--- Insert default product definitions
+-- Výchozí katalog s zástupnou pracností, skutečné hodnoty se nastavují v aplikaci
 insert into billable_product_definitions (section_key, label, calculation_type, source_key, default_enabled, default_md, default_price_mode, sort_order)
 values
-  ('pruzkum_a_pozice', 'Analytický workshop', 'manual', null, false,2, 'md_rate', 10),
-  ('pruzkum_a_pozice', 'Konkurenční analýza', 'manual', null, false,1.5, 'md_rate', 20),
-  ('pruzkum_a_pozice', 'Uživatelský výzkum', 'manual', null, false, 3, 'md_rate', 30),
+  ('pruzkum_a_pozice', 'Analytický workshop', 'manual', null, false, 1, 'md_rate', 10),
+  ('pruzkum_a_pozice', 'Konkurenční analýza', 'manual', null, false, 1, 'md_rate', 20),
+  ('pruzkum_a_pozice', 'Uživatelský výzkum', 'manual', null, false, 1, 'md_rate', 30),
   ('koncept', 'UX primární (Desktop)', 'derived_from_screens', 'ux_primary_desktop', false,null, 'md_rate', 100),
   ('koncept', 'UX sekundární (Mobil)', 'derived_from_screens', 'ux_secondary_mobile', false,null, 'md_rate', 110),
   ('vizualni_design', 'UI primární (Desktop)', 'derived_from_screens', 'ui_primary_desktop', false,null, 'md_rate', 200),
   ('vizualni_design', 'UI sekundární (Mobil)', 'derived_from_screens', 'ui_secondary_mobile', false,null, 'md_rate', 210),
   ('programming', 'Webflow', 'derived_from_screens', 'webflow', false,null, 'md_rate', 300),
-  ('programming', 'Programování na míru', 'manual', null, false, 10, 'md_rate', 310);
+  ('programming', 'Programování na míru', 'manual', null, false, 1, 'md_rate', 310);
 
 -- 4. Projects
 create table projects (
@@ -113,7 +79,7 @@ create table projects (
   project_code text not null default '',
   version_label text not null default 'v1',
   project_date date not null default current_date,
-  hourly_rate numeric not null default 1845,
+  hourly_rate numeric not null default 1000,
   complexity_coefficient_percent numeric not null default 100,
   pm_percent numeric not null default 10,
   first_mobile_set boolean not null default false,
@@ -169,24 +135,19 @@ alter table projects enable row level security;
 alter table project_screens enable row level security;
 alter table project_billable_items enable row level security;
 
--- Allow authenticated users full access (domain restriction is enforced at app level)
-create policy "authenticated_access" on global_settings for all using (auth.role() = 'authenticated');
-create policy "authenticated_access" on screen_complexity_calibration for all using (auth.role() = 'authenticated');
-create policy "authenticated_access" on billable_product_definitions for all using (auth.role() = 'authenticated');
-create policy "authenticated_access" on projects for all using (auth.role() = 'authenticated');
-create policy "authenticated_access" on project_screens for all using (auth.role() = 'authenticated');
-create policy "authenticated_access" on project_billable_items for all using (auth.role() = 'authenticated');
+-- 7. Šablona nabídky (nahrává ji `npm run sablona` se service role klíčem, aplikace ji jen čte)
+create table offer_templates (
+  key text primary key,
+  content text not null default '',
+  updated_at timestamptz not null default now()
+);
+alter table offer_templates enable row level security;
 
--- ============================================================
--- Migration: Add description column to billable_product_definitions
--- Run this if the table already exists:
--- ALTER TABLE billable_product_definitions ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT '';
--- ALTER TABLE projects ADD COLUMN IF NOT EXISTS project_code text NOT NULL DEFAULT '';
--- ALTER TABLE global_settings ADD COLUMN IF NOT EXISTS md_supplier_info text NOT NULL DEFAULT '**Švejda & Goldmann s.r.o.**
--- Sídlo: Karlovo náměstí 290/16, 120 00 Praha 2
--- IČO: 09831193
--- DIČ: CZ09831193';
--- ALTER TABLE global_settings ADD COLUMN IF NOT EXISTS md_contacts text NOT NULL DEFAULT '- Jan Švejda — jan@svejda-goldmann.cz
--- - Jakub Goldmann — jakub@svejda-goldmann.cz';
--- ALTER TABLE global_settings ADD COLUMN IF NOT EXISTS md_references text NOT NULL DEFAULT 'Vybrané projekty na vyžádání.';
--- ============================================================
+-- Přístup jen pro přihlášené s e-mailem @svejda-goldmann.cz
+create policy "sg_access" on global_settings for all using (lower(coalesce(auth.jwt() ->> 'email', '')) like '%@svejda-goldmann.cz');
+create policy "sg_access" on screen_complexity_calibration for all using (lower(coalesce(auth.jwt() ->> 'email', '')) like '%@svejda-goldmann.cz');
+create policy "sg_access" on billable_product_definitions for all using (lower(coalesce(auth.jwt() ->> 'email', '')) like '%@svejda-goldmann.cz');
+create policy "sg_access" on projects for all using (lower(coalesce(auth.jwt() ->> 'email', '')) like '%@svejda-goldmann.cz');
+create policy "sg_access" on project_screens for all using (lower(coalesce(auth.jwt() ->> 'email', '')) like '%@svejda-goldmann.cz');
+create policy "sg_access" on project_billable_items for all using (lower(coalesce(auth.jwt() ->> 'email', '')) like '%@svejda-goldmann.cz');
+create policy "sg_access" on offer_templates for select using (lower(coalesce(auth.jwt() ->> 'email', '')) like '%@svejda-goldmann.cz');

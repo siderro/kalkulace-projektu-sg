@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Šablona nabídky – interní know-how, nahrává se do Supabase (npm run sablona)
+sablona/

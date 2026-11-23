@@ -45,9 +45,15 @@ interface Stage {
 }
 
 /**
- * Generate the complete Czech Markdown offer from project data.
+ * Generate the complete Czech Markdown offer from project data and the offer template.
  */
-export function generateMarkdown(input: MarkdownInput): string {
+export function generateMarkdown(input: MarkdownInput, template: string): string {
+  return renderTemplate(template, buildTemplateData(input));
+}
+
+// Hodnoty pro značky šablony: čísla už naformátovaná, tabulky hotové jako Markdown.
+// Texty nabídky jsou v šabloně (sablona/nabidka.md, nahrává se do Supabase), tady jen data.
+export function buildTemplateData(input: MarkdownInput): TemplateData {
   const { project, screens, billableItems, definitions, summary, settings } = input;
 
   const defMap = new Map(definitions.map((d) => [d.id, d]));
@@ -67,59 +73,16 @@ export function generateMarkdown(input: MarkdownInput): string {
     return [{ key, label: SECTION_LABELS[key], items, total }];
   });
 
-  const sections: string[] = [];
-
-  // Hlavička s verzí a datem
-  sections.push(
-    `**Verze ${project.version_label}** | ${formatCzechDate(project.project_date)}`,
-  );
-
-  sections.push(`# Cenová nabídka – ${project.name}`);
-
-  // Komu je nabídka určena (pokud je vyplněn klient)
-  if (project.client_name.trim()) {
-    const contact = project.client_contact.trim();
-    sections.push(`Pro: **${project.client_name.trim()}**${contact ? `, ${contact}` : ''}`);
-  }
-
-  // Cíl projektu slovy klienta (pokud je vyplněn)
-  if (project.goal.trim()) {
-    sections.push(`## Cíl projektu\n\n${project.goal.trim()}`);
-  }
-
-  // Shrnutí: jen názvy zaškrtnutých činností (v pořadí etap), termíny, cena
-  const scopeBullets = stages.flatMap(({ items }) => items.map(({ def }) => `- ${def.label}`));
+  // Termíny: každý údaj na vlastní řádek (tvrdý zlom, jinak se v Google Docs slijí)
   const duration = formatDuration(project.start_date, project.end_date);
   const termLines = [
     ...(project.start_date ? [`Začátek projektu: **${formatCzechDate(project.start_date)}**`] : []),
     ...(project.end_date ? [`Předpokládané dokončení: **${formatCzechDate(project.end_date)}**`] : []),
     ...(duration ? [`Celková doba: **${duration}**`] : []),
   ];
-  sections.push(
-    [
-      `## Shrnutí společného projektu`,
-      ``,
-      ...scopeBullets,
-      ...(screens.length > 0 ? [``, `Rozsah obrazovek je v tabulce „Přehled obrazovek“ v příloze.`] : []),
-      ...(termLines.length > 0 ? [``, termLines.join('  \n')] : []),
-      ``,
-      `Projekt závisí na vaší součinnosti – po každé iteraci od vás potřebujeme zpětnou vazbu, ideálně do 2 dnů.`,
-      ``,
-      `Celková cena za projekt: **${formatCurrencyMd(summary.projectTotal)}** (bez DPH)  `,
-      `Platíte vždy až za schválenou etapu – nic předem.`,
-    ].join('\n'),
-  );
-
-  // Reference: projektový přepis má přednost, prázdné = sekce se netiskne
-  const references = stripTitle(project.references_override.trim() || settings.md_references, [
-    'Referenční projekty', 'Reference', 'Podobné projekty', 'Podobné projekty, které jsme dělali',
-  ]);
-  if (references) {
-    sections.push(`## Podobné projekty, které jsme dělali\n\n${references}`);
-  }
 
   // Detailní rozsah: tabulka položek a cen per etapa, popisy jako odrážky s názvem položky
-  const sectionBlocks = stages.map(({ label, items, total }) => {
+  const stageBlocks = stages.map(({ label, items, total }) => {
     const rows = items.map(
       ({ item, def }) => `| ${def.label} | ${formatCurrencyMd(adjusted(item.price_value))} |`,
     );
@@ -136,39 +99,6 @@ export function generateMarkdown(input: MarkdownInput): string {
       ...(descriptions.length > 0 ? [``, descriptions.join('\n')] : []),
     ].join('\n');
   });
-  sections.push([`## Detailní rozsah projektu`, ``, sectionBlocks.join('\n\n')].join('\n'));
-
-  // Celková cena (rozpad ceny; fakturace je níž v Platebních podmínkách)
-  sections.push(
-    [
-      `### Celková cena`,
-      ``,
-      `| | Cena |`,
-      `|---|---|`,
-      `| Mezisoučet | ${formatCurrencyMd(summary.adjustedSubtotal)} |`,
-      `| Řízení projektu (${project.pm_percent} %) | ${formatCurrencyMd(summary.pmAmount)} |`,
-      ...(summary.slaTotal > 0
-        ? [
-            `| Podpora po spuštění (${summary.months} měs. × ${formatCurrencyMd(summary.slaMonthlyFee)}) | ${formatCurrencyMd(summary.slaTotal)} |`,
-          ]
-        : []),
-      `| **Celková cena projektu** (bez DPH) | **${formatCurrencyMd(summary.projectTotal)}** |`,
-    ].join('\n'),
-  );
-
-  // Řízení projektu: jen hodnota pro klienta (text z nastavení)
-  sections.push(`### Řízení projektu\n\n${stripTitle(settings.md_pm_text, ['Řízení projektu', 'Projektový management'])}`);
-
-  // Podpora po spuštění (volitelná, jen pokud je nastavena)
-  if (project.sla_monthly_fee > 0) {
-    sections.push(
-      [
-        `### Podpora po spuštění`,
-        ``,
-        `Po spuštění se o web dál staráme za měsíční paušál **${formatCurrencyMd(project.sla_monthly_fee)}/měsíc** (v ceně je zahrnuto ${summary.months} měs.). ${stripTitle(settings.md_support_text, ['Podpora po spuštění', 'SLA'])}`,
-      ].join('\n'),
-    );
-  }
 
   // Fakturace PM: měsíčně jen když měsíční částka dává smysl, jinak rozpočítat do etap.
   // Měsíční částka se tiskne jen jako sazba za prodloužení – nikdy jako součin,
@@ -179,7 +109,6 @@ export function generateMarkdown(input: MarkdownInput): string {
     billingMonths !== null && pmMonthly !== null && pmMonthly >= settings.pm_min_monthly_invoice;
 
   let milestoneRows: string[];
-  let pmBillingParagraph: string;
   if (pmMonthlyBilling) {
     milestoneRows = [
       ...stages.map(
@@ -187,14 +116,12 @@ export function generateMarkdown(input: MarkdownInput): string {
       ),
       `| Řízení projektu | měsíčně, ${billingMonths} ${pluralInvoices(billingMonths)} | ${formatCurrencyMd(summary.pmAmount)} |`,
     ];
-    pmBillingParagraph = `Řízení projektu (${formatCurrencyMd(summary.pmAmount)}) fakturujeme průběžně – ${billingMonths} ${pluralInvoices(billingMonths)}, za každý započatý měsíc projektu. Částka vychází z předpokládané doby trvání projektu. Pokud by se projekt prodloužil z důvodů na straně klienta, dovolíme si za každý další započatý měsíc účtovat ${formatCurrencyMd(pmMonthly)}; vždy vás na to upozorníme předem.`;
   } else {
     const pmShares = distributeProportionally(summary.pmAmount, stages.map((s) => s.total));
     milestoneRows = stages.map(
       ({ label, total }, i) =>
         `| ${label} (vč. řízení projektu) | po schválení etapy | ${formatCurrencyMd(total + pmShares[i])} |`,
     );
-    pmBillingParagraph = `Řízení projektu je u tohoto rozsahu zahrnuto v ceně jednotlivých etap.`;
   }
   if (summary.slaTotal > 0) {
     milestoneRows.push(
@@ -202,55 +129,77 @@ export function generateMarkdown(input: MarkdownInput): string {
     );
   }
 
-  // Platební podmínky: princip z nastavení, milníky, fakturace PM, formality
-  sections.push(
-    [
-      `### Platební podmínky`,
-      ``,
-      stripTitle(settings.md_payment_terms, ['Platební podmínky']),
-      ``,
-      `| Etapa | Fakturujeme | Částka |`,
-      `|-------|-------------|--------|`,
-      ...milestoneRows,
-      ``,
-      pmBillingParagraph,
-      ``,
-      `- Všechny ceny jsou uvedeny bez DPH.`,
-      `- Nabídka je platná 30 dní od data vystavení.`,
-      ...(project.notes.trim() ? [``, `**Poznámky:** ${project.notes.trim()}`] : []),
-    ].join('\n'),
-  );
-
-  // Co nabídka nezahrnuje: text z košilky, prázdné = výchozí z Nastavení
+  // Reference a výluky: projektový přepis z košilky má přednost, prázdné = výchozí z Nastavení
+  const references = stripTitle(project.references_override.trim() || settings.md_references, [
+    'Referenční projekty', 'Reference', 'Podobné projekty', 'Podobné projekty, které jsme dělali',
+  ]);
   // (řádky bez odrážky doplníme o „- “, jinak by se slily do poslední položky)
   const exclusions = asBulletList(
     stripTitle(project.exclusions_extra.trim() || settings.md_exclusions, ['Co nabídka nezahrnuje']),
   );
-  if (exclusions) {
-    sections.push(`### Co nabídka nezahrnuje\n\n${exclusions}`);
-  }
 
-  // Další postup: výzva k akci + závěr (Markdown z nastavení, předává se beze změny)
-  sections.push(`## Další postup\n\n${stripTitle(settings.md_next_steps, ['Další postup'])}`);
+  return {
+    verze: project.version_label,
+    datum: formatCzechDate(project.project_date),
+    nazev: project.name,
+    klient: project.client_name.trim(),
+    kontakt_klienta: project.client_contact.trim(),
+    cil: project.goal.trim(),
+    rozsah: stages.flatMap(({ items }) => items.map(({ def }) => `- ${def.label}`)).join('\n'),
+    terminy: termLines.join('  \n'),
+    cena_celkem: formatCurrencyMd(summary.projectTotal),
+    reference: references,
+    etapy: stageBlocks.join('\n\n'),
+    mezisoucet: formatCurrencyMd(summary.adjustedSubtotal),
+    pm_procent: String(project.pm_percent),
+    pm_cena: formatCurrencyMd(summary.pmAmount),
+    pm_mesicne: pmMonthlyBilling,
+    pm_faktur: billingMonths ? `${billingMonths} ${pluralInvoices(billingMonths)}` : '',
+    pm_mesicni_sazba: pmMonthly !== null ? formatCurrencyMd(pmMonthly) : '',
+    podpora: project.sla_monthly_fee > 0,
+    podpora_v_cene: summary.slaTotal > 0,
+    podpora_mesicne: formatCurrencyMd(project.sla_monthly_fee),
+    podpora_mesicu: String(summary.months),
+    podpora_celkem: formatCurrencyMd(summary.slaTotal),
+    tabulka_fakturace: [
+      `| Etapa | Fakturujeme | Částka |`,
+      `|-------|-------------|--------|`,
+      ...milestoneRows,
+    ].join('\n'),
+    poznamky: project.notes.trim(),
+    vyluky: exclusions,
+    obrazovky: screens.length > 0,
+    tabulka_obrazovek: screens.length > 0 ? buildScreensTable(screens, definitions) : '',
+  };
+}
 
-  // Kontakty (z nastavení): jména jako H3, pod nimi obyčejný text
-  sections.push(`## Na koho se v ŠG obracet\n\n${hardBreaks(stripTitle(settings.md_contacts, ['Kontakty', 'Kontaktní osoby', 'Na koho se v ŠG obracet'], false))}`);
+// --- Šablona ---
+// {{x}} = hodnota, {{#x}}…{{/x}} = jen když x je vyplněné/pravdivé, {{^x}}…{{/x}} = jen když není.
+// Řádek, na kterém je jen značka bloku, zmizí celý; víc prázdných řádků za sebou se sloučí do jednoho.
+// Komentáře <!-- … --> se netisknou. Neznámá značka zůstane ve výstupu, aby byl překlep vidět.
 
-  // Základní informace o společnosti (z nastavení): jeden odstavec, položky oddělené čárkami
-  sections.push(
-    `### Základní informace o společnosti\n\n${plainCommaList(stripTitle(settings.md_supplier_info, ['Dodavatel', 'Základní informace o společnosti', 'Fakturační údaje'], false))}`,
+export type TemplateData = Record<string, string | boolean>;
+
+export function renderTemplate(template: string, data: TemplateData): string {
+  const standalone = template
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/^[ \t]*(\{\{[#^/]\w+\}\})[ \t]*\r?\n/gm, '$1');
+  return renderBlocks(standalone, data)
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function renderBlocks(template: string, data: TemplateData): string {
+  const withBlocks = template.replace(
+    /\{\{([#^])(\w+)\}\}([\s\S]*?)\{\{\/\2\}\}/g,
+    (_, kind: string, key: string, inner: string) => {
+      const on = Boolean(data[key]);
+      return (kind === '#') === on ? renderBlocks(inner, data) : '';
+    },
   );
-
-  // Přílohy: přehled obrazovek úplně na konci
-  if (screens.length > 0) {
-    sections.push(
-      [`## Přílohy`, ``, `### Přehled obrazovek`, ``, buildScreensTable(screens, definitions)].join(
-        '\n',
-      ),
-    );
-  }
-
-  return sections.join('\n\n');
+  return withBlocks.replace(/\{\{(\w+)\}\}/g, (tag, key: string) =>
+    key in data && typeof data[key] === 'string' ? (data[key] as string) : tag,
+  );
 }
 
 // Rozdělí částku poměrně k vahám; zaokrouhlovací rozdíl nese poslední podíl, aby součet seděl na korunu
@@ -280,46 +229,23 @@ function pluralInvoices(n: number): string {
   return 'faktur';
 }
 
-// Jednoduché odřádkování → tvrdý zlom řádku (jinak se v Google Docs řádky slijí);
-// řádky s nadpisem (#) se nechávají beze změny
-function hardBreaks(text: string): string {
-  return text
-    .trim()
-    .split('\n')
-    .map((line, i, lines) => {
-      const next = lines[i + 1];
-      const needsBreak = line !== '' && !line.startsWith('#') && next !== undefined && next !== '';
-      return needsBreak ? `${line}  ` : line;
-    })
-    .join('\n');
-}
-
-// Odstraní z textu z nastavení úvodní nadpis, který už generuje šablona (jinak je v nabídce dvakrát).
-// Maže úvodní řádky, které se shodují s některým z názvů (i s #, ** nebo dvojtečkou);
-// s anyHeading maže i jakýkoliv úvodní Markdown nadpis (#).
-function stripTitle(text: string, titles: string[], anyHeading = true): string {
+// Odstraní z textu úvodní nadpis, který už generuje šablona (jinak je v nabídce dvakrát).
+// Maže úvodní řádky, které se shodují s některým z názvů (i s #, ** nebo dvojtečkou)
+// a jakýkoliv úvodní Markdown nadpis (#).
+function stripTitle(text: string, titles: string[]): string {
   const norm = (t: string) =>
     t.replace(/^#+\s*/, '').replace(/\*\*/g, '').replace(/:\s*$/, '').trim().toLowerCase();
   const known = titles.map(norm);
   const lines = text.trim().split('\n');
   while (lines.length > 0) {
     const line = lines[0].trim();
-    if (line === '' || known.includes(norm(line)) || (anyHeading && /^#+\s/.test(line))) {
+    if (line === '' || known.includes(norm(line)) || /^#+\s/.test(line)) {
       lines.shift();
     } else {
       break;
     }
   }
   return lines.join('\n').trim();
-}
-
-// Víceřádkový text → jeden odstavec plaintextu, položky oddělené čárkami (bez Markdown formátování)
-function plainCommaList(text: string): string {
-  return text
-    .split('\n')
-    .map((line) => line.replace(/\*\*/g, '').trim())
-    .filter(Boolean)
-    .join(', ');
 }
 
 // --- Screens table helper ---
