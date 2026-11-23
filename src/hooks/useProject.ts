@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import type {
   Project,
   ProjectScreen,
@@ -26,6 +26,8 @@ export interface ProjectState {
   summary: ProjectSummary | null;
   loading: boolean;
   dirty: boolean;
+  saveError: string | null;
+  lastSavedAt: Date | null;
   mdRate: number;
 
   // Actions
@@ -62,7 +64,7 @@ export interface ProjectState {
   ) => void;
 
   // Persistence
-  save: () => Promise<void>;
+  save: () => Promise<boolean>; // false = uložení selhalo
 }
 
 export function useProject(): ProjectState {
@@ -71,6 +73,14 @@ export function useProject(): ProjectState {
   const [billableItems, setBillableItemsState] = useState<ProjectBillableItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  // Počítadlo změn: uložení označí projekt jako uložený jen když se mezitím nic nezměnilo
+  const changeCount = useRef(0);
+  const markDirty = useCallback(() => {
+    changeCount.current += 1;
+    setDirty(true);
+  }, []);
 
   const mdRate = project ? project.hourly_rate * 8 : 0;
 
@@ -97,6 +107,8 @@ export function useProject(): ProjectState {
     setScreensState(s);
     setBillableItemsState(b);
     setDirty(false);
+    setSaveError(null);
+    setLastSavedAt(null);
     setLoading(false);
   }, []);
 
@@ -140,9 +152,9 @@ export function useProject(): ProjectState {
       setProject(newProject);
       setScreensState([]);
       setBillableItemsState(items);
-      setDirty(true);
+      markDirty();
     },
-    [],
+    [markDirty],
   );
 
   const updateProjectField = useCallback((field: keyof Project, value: unknown) => {
@@ -163,13 +175,13 @@ export function useProject(): ProjectState {
       );
     }
 
-    setDirty(true);
-  }, []);
+    markDirty();
+  }, [markDirty]);
 
   const setScreens = useCallback((newScreens: ProjectScreen[]) => {
     setScreensState(newScreens);
-    setDirty(true);
-  }, []);
+    markDirty();
+  }, [markDirty]);
 
   const addScreen = useCallback(() => {
     if (!project) return;
@@ -187,17 +199,17 @@ export function useProject(): ProjectState {
       sort_order: screens.length,
     };
     setScreensState((prev) => [...prev, newScreen]);
-    setDirty(true);
-  }, [project, screens.length]);
+    markDirty();
+  }, [project, screens.length, markDirty]);
 
   const updateScreen = useCallback(
     (id: string, field: keyof ProjectScreen, value: unknown) => {
       setScreensState((prev) =>
         prev.map((s) => (s.id === id ? { ...s, [field]: value } : s)),
       );
-      setDirty(true);
+      markDirty();
     },
-    [],
+    [markDirty],
   );
 
   const duplicateScreen = useCallback((id: string) => {
@@ -212,18 +224,18 @@ export function useProject(): ProjectState {
       };
       return [...prev, copy];
     });
-    setDirty(true);
-  }, []);
+    markDirty();
+  }, [markDirty]);
 
   const removeScreen = useCallback((id: string) => {
     setScreensState((prev) => prev.filter((s) => s.id !== id));
-    setDirty(true);
-  }, []);
+    markDirty();
+  }, [markDirty]);
 
   const setBillableItems = useCallback((items: ProjectBillableItem[]) => {
     setBillableItemsState(items);
-    setDirty(true);
-  }, []);
+    markDirty();
+  }, [markDirty]);
 
   const toggleItemEnabled = useCallback((id: string) => {
     setBillableItemsState((prev) =>
@@ -231,15 +243,15 @@ export function useProject(): ProjectState {
         item.id === id ? { ...item, enabled: !item.enabled } : item,
       ),
     );
-    setDirty(true);
-  }, []);
+    markDirty();
+  }, [markDirty]);
 
   const deselectAllItems = useCallback(() => {
     setBillableItemsState((prev) =>
       prev.map((item) => ({ ...item, enabled: false })),
     );
-    setDirty(true);
-  }, []);
+    markDirty();
+  }, [markDirty]);
 
   const overrideItemMd = useCallback((id: string, newMd: number) => {
     const currentMdRate = (project?.hourly_rate ?? 0) * 8;
@@ -256,8 +268,8 @@ export function useProject(): ProjectState {
           : item,
       ),
     );
-    setDirty(true);
-  }, [project?.hourly_rate]);
+    markDirty();
+  }, [project?.hourly_rate, markDirty]);
 
   const resetItemOverride = useCallback(
     (
@@ -292,9 +304,9 @@ export function useProject(): ProjectState {
           };
         }),
       );
-      setDirty(true);
+      markDirty();
     },
-    [project?.hourly_rate, screens],
+    [project?.hourly_rate, screens, markDirty],
   );
 
   const recalculate = useCallback(
@@ -321,13 +333,24 @@ export function useProject(): ProjectState {
   );
 
   const save = useCallback(async () => {
-    if (!project) return;
+    if (!project) return false;
+    const savedChange = changeCount.current;
     setLoading(true);
-    await upsertProject(project);
-    await saveProjectScreens(project.id, screens);
-    await saveProjectBillableItems(project.id, billableItems);
-    setDirty(false);
-    setLoading(false);
+    try {
+      await upsertProject(project);
+      await saveProjectScreens(project.id, screens);
+      await saveProjectBillableItems(project.id, billableItems);
+      setSaveError(null);
+      setLastSavedAt(new Date());
+      if (changeCount.current === savedChange) setDirty(false);
+      setLoading(false);
+      return true;
+    } catch (e) {
+      console.error('save:', e);
+      setSaveError(e instanceof Error ? e.message : String(e));
+      setLoading(false);
+      return false;
+    }
   }, [project, screens, billableItems]);
 
   return {
@@ -337,6 +360,8 @@ export function useProject(): ProjectState {
     summary,
     loading,
     dirty,
+    saveError,
+    lastSavedAt,
     mdRate,
     loadProject,
     createNewProject,

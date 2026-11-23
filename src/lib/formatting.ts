@@ -55,6 +55,17 @@ export function formatCzechDate(isoDate: string): string {
 }
 
 /**
+ * ISO datum posunuté o daný počet dní (pro platnost nabídky).
+ * e.g. ("2026-11-23", 30) → "2026-12-23"
+ */
+export function addDaysIso(isoDate: string, days: number): string {
+  const d = new Date(`${isoDate}T12:00:00Z`);
+  if (isNaN(d.getTime())) return isoDate;
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
  * Format MD value for display.
  * e.g. 3.6 → "3,60 MD"
  */

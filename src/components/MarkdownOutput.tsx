@@ -8,6 +8,13 @@ import type {
 } from '../types';
 import type { ProjectSummary } from '../lib/calculations';
 import { generateMarkdown } from '../lib/markdown';
+import { checkOffer, type CheckTab } from '../lib/checks';
+
+const TAB_NAMES: Record<CheckTab, string> = {
+  kosilka: 'Košilka',
+  screens: 'Obrazovky',
+  billable: 'Položky',
+};
 
 interface Props {
   project: Project;
@@ -17,6 +24,7 @@ interface Props {
   summary: ProjectSummary;
   settings: GlobalSettings;
   template: string;
+  onNavigate: (tab: CheckTab) => void;
 }
 
 export function MarkdownOutput({
@@ -27,6 +35,7 @@ export function MarkdownOutput({
   summary,
   settings,
   template,
+  onNavigate,
 }: Props) {
   const [copied, setCopied] = useState(false);
 
@@ -41,6 +50,11 @@ export function MarkdownOutput({
         settings,
       }, template),
     [project, screens, billableItems, definitions, summary, settings, template],
+  );
+
+  const warnings = useMemo(
+    () => checkOffer({ project, screens, billableItems, definitions, summary, settings }, markdown),
+    [project, screens, billableItems, definitions, summary, settings, markdown],
   );
 
   async function handleCopy() {
@@ -69,6 +83,21 @@ export function MarkdownOutput({
           {copied ? 'Zkopírováno!' : 'Kopírovat do schránky'}
         </button>
       </div>
+      {template.trim() && warnings.length > 0 && (
+        <div className="offer-warnings">
+          <strong>Před odesláním zkontrolujte:</strong>
+          <ul>
+            {warnings.map((w) => (
+              <li key={w.message}>
+                {w.message}{' '}
+                <button className="link-btn" onClick={() => onNavigate(w.tab)}>
+                  {TAB_NAMES[w.tab]} →
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {template.trim() ? (
         <pre className="markdown-output">{markdown}</pre>
       ) : (

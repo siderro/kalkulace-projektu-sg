@@ -168,10 +168,7 @@ export async function upsertProject(
     })
     .select()
     .single();
-  if (error) {
-    console.error('upsertProject:', error);
-    return null;
-  }
+  if (error) throw new Error(`projects: ${error.message}`);
   return data;
 }
 
@@ -242,16 +239,28 @@ export async function fetchProjectScreens(
   return data ?? [];
 }
 
+// Uloží obrazovky projektu: nejdřív upsert, pak smazat odebrané (při chybě se nic neztratí).
+// Při chybě vyhodí výjimku, aby se změny neoznačily jako uložené.
 export async function saveProjectScreens(
   projectId: string,
   screens: ProjectScreen[],
 ): Promise<void> {
-  // Delete existing, then insert all (simplest approach for current state)
-  await supabase.from('project_screens').delete().eq('project_id', projectId);
-  if (screens.length > 0) {
-    const { error } = await supabase.from('project_screens').insert(screens);
-    if (error) console.error('saveProjectScreens:', error);
+  await saveProjectRows('project_screens', projectId, screens);
+}
+
+async function saveProjectRows(
+  table: 'project_screens' | 'project_billable_items',
+  projectId: string,
+  rows: { id: string }[],
+): Promise<void> {
+  if (rows.length > 0) {
+    const { error } = await supabase.from(table).upsert(rows);
+    if (error) throw new Error(`${table}: ${error.message}`);
   }
+  let remove = supabase.from(table).delete().eq('project_id', projectId);
+  if (rows.length > 0) remove = remove.not('id', 'in', `(${rows.map((r) => r.id).join(',')})`);
+  const { error } = await remove;
+  if (error) throw new Error(`${table}: ${error.message}`);
 }
 
 // --- Project Billable Items ---
@@ -275,14 +284,5 @@ export async function saveProjectBillableItems(
   projectId: string,
   items: ProjectBillableItem[],
 ): Promise<void> {
-  await supabase
-    .from('project_billable_items')
-    .delete()
-    .eq('project_id', projectId);
-  if (items.length > 0) {
-    const { error } = await supabase
-      .from('project_billable_items')
-      .insert(items);
-    if (error) console.error('saveProjectBillableItems:', error);
-  }
+  await saveProjectRows('project_billable_items', projectId, items);
 }

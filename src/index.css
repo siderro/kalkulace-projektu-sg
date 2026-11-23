@@ -105,6 +105,31 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 4px;
 }
 
+.save-error {
+  color: var(--danger);
+  background: #f8d7da;
+}
+
+.saved-indicator {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.undo-toast {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--text);
+  color: var(--surface);
+  border-radius: 4px;
+  font-size: 13px;
+}
+
 .app-main {
   flex: 1;
   padding: 16px 24px;
@@ -553,6 +578,16 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 12px;
 }
 .markdown-header h3 { margin: 0; }
+
+.offer-warnings {
+  background: var(--overridden-bg);
+  border: 1px solid var(--warning);
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.offer-warnings ul { margin: 4px 0 0; padding-left: 20px; }
 
 .markdown-output {
   background: var(--surface);

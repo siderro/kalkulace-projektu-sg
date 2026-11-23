@@ -85,6 +85,35 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
     );
   }
 
+  // Text sekce nabídky s výchozí hodnotou z Nastavení; prázdné pole = výchozí text
+  function defaultText(label: string, key: 'references_override' | 'exclusions_extra', defaultValue: string, rows: number) {
+    const own = project[key];
+    const value = own.trim() ? own : defaultValue;
+    const changed = value.trim() !== defaultValue.trim();
+    return (
+      <div className="field">
+        <label>
+          {label}{' '}
+          <span className="default-hint">{changed ? 'upraveno pro tento projekt' : 'výchozí text z Nastavení'}</span>
+          {changed && (
+            <>
+              {' '}
+              <button type="button" className="link-btn" onClick={() => onUpdate(key, defaultValue)}>
+                Obnovit výchozí
+              </button>
+            </>
+          )}
+        </label>
+        <textarea
+          value={value}
+          onChange={(e) => onUpdate(key, e.target.value)}
+          rows={rows}
+          className={changed ? 'input-warning' : ''}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="kosilka">
       <h3>Košilka projektu</h3>
@@ -140,23 +169,8 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
         <div className="form-divider" />
 
         {field('Cíl projektu (zobrazí se v nabídce)', 'goal', 'textarea')}
-        {/* Celý text sekce nabídky; prázdné pole = výchozí text z Nastavení (zobrazí se tady) */}
-        <div className="field">
-          <label>Podobné projekty, které jsme dělali (prázdné = sekce se netiskne)</label>
-          <textarea
-            value={project.references_override.trim() ? project.references_override : settings.md_references}
-            onChange={(e) => onUpdate('references_override', e.target.value)}
-            rows={5}
-          />
-        </div>
-        <div className="field">
-          <label>Co nabídka nezahrnuje</label>
-          <textarea
-            value={project.exclusions_extra.trim() ? project.exclusions_extra : settings.md_exclusions}
-            onChange={(e) => onUpdate('exclusions_extra', e.target.value)}
-            rows={6}
-          />
-        </div>
+        {defaultText('Podobné projekty, které jsme dělali', 'references_override', settings.md_references, 5)}
+        {defaultText('Co nabídka nezahrnuje', 'exclusions_extra', settings.md_exclusions, 6)}
         {field('Poznámky', 'notes', 'textarea')}
       </div>
     </div>

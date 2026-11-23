@@ -14,6 +14,7 @@ import {
 } from '../types';
 import { type ProjectSummary, computeAdjustedItemPrice } from './calculations';
 import {
+  addDaysIso,
   computeBillingMonths,
   formatCzechDate,
   formatCurrencyMd,
@@ -28,6 +29,9 @@ export interface MarkdownInput {
   summary: ProjectSummary;
   settings: GlobalSettings;
 }
+
+// Platnost nabídky od data verze
+const OFFER_VALIDITY_DAYS = 30;
 
 // Pořadí etap v nabídce (etapa = sekce katalogu)
 const SECTION_ORDER: SectionKey[] = [
@@ -141,6 +145,7 @@ export function buildTemplateData(input: MarkdownInput): TemplateData {
   return {
     verze: project.version_label,
     datum: formatCzechDate(project.project_date),
+    platnost_do: formatCzechDate(addDaysIso(project.project_date, OFFER_VALIDITY_DAYS)),
     nazev: project.name,
     klient: project.client_name.trim(),
     kontakt_klienta: project.client_contact.trim(),

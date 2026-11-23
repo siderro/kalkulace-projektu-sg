@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useGlobalSettings } from './hooks/useGlobalSettings';
 import { useProject } from './hooks/useProject';
@@ -14,6 +14,14 @@ import { formatCurrency, formatDecimal } from './lib/formatting';
 type Tab = 'kosilka' | 'screens' | 'billable' | 'output';
 type View = 'projects' | 'editor' | 'settings';
 
+// Automatické uložení po chvíli bez změn
+const AUTOSAVE_DELAY_MS = 2000;
+
+interface Undo {
+  message: string;
+  restore: () => void;
+}
+
 const TAB_LABELS: Record<Tab, string> = {
   kosilka: 'Košilka',
   screens: 'Obrazovky',
@@ -28,6 +36,8 @@ export default function App() {
 
   const [view, setView] = useState<View>('projects');
   const [activeTab, setActiveTab] = useState<Tab>('kosilka');
+  const [undo, setUndo] = useState<Undo | null>(null);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Recalculate when switching to billable or output tabs
   const doRecalculate = useCallback(() => {
@@ -62,9 +72,12 @@ export default function App() {
     setActiveTab('kosilka');
   }
 
-  function handleGoHome() {
-    if (projectState.dirty) {
-      if (!confirm('Máte neuložené změny. Opravdu chcete odejít?')) return;
+  async function handleGoHome() {
+    // Projekt s názvem se před odchodem uloží, nepojmenovaný se jen potvrdí
+    if (projectState.dirty && projectState.project?.name.trim()) {
+      if (!(await projectState.save())) return;
+    } else if (projectState.dirty) {
+      if (!confirm('Projekt nemá název a nebude uložen. Opravdu chcete odejít?')) return;
     }
     setView('projects');
   }
@@ -72,6 +85,55 @@ export default function App() {
   async function handleSave() {
     doRecalculate();
     await projectState.save();
+  }
+
+  // Autosave: projekt s názvem se uloží 2 s po poslední změně (prázdný nový projekt ne)
+  const { dirty, loading: saving, save, project: currentProject } = projectState;
+  useEffect(() => {
+    if (view !== 'editor' || !dirty || saving || !currentProject?.name.trim()) return;
+    const timer = setTimeout(() => { save(); }, AUTOSAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [view, dirty, saving, save, currentProject]);
+
+  // Varování při zavření tabu s neuloženými změnami
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [dirty]);
+
+  // Cmd/Ctrl+S = uložit
+  useEffect(() => {
+    if (view !== 'editor') return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        save();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [view, save]);
+
+  // Krátká nabídka „Vrátit“ po mazání
+  function offerUndo(message: string, restore: () => void) {
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    setUndo({ message, restore });
+    undoTimer.current = setTimeout(() => setUndo(null), 8000);
+  }
+
+  function handleRemoveScreen(id: string) {
+    const before = projectState.screens;
+    const name = before.find((s) => s.id === id)?.name.trim();
+    projectState.removeScreen(id);
+    offerUndo(name ? `Obrazovka „${name}“ smazána.` : 'Obrazovka smazána.', () => projectState.setScreens(before));
+  }
+
+  function handleDeselectAll() {
+    const before = projectState.billableItems;
+    projectState.deselectAllItems();
+    offerUndo('Všechny položky odznačeny.', () => projectState.setBillableItems(before));
   }
 
   // --- Auth gate ---
@@ -163,7 +225,15 @@ export default function App() {
             </span>
           )}
         </span>
-        {projectState.dirty && <span className="dirty-indicator">Neuloženo</span>}
+        {projectState.saveError ? (
+          <span className="dirty-indicator save-error" title={projectState.saveError}>Uložení selhalo</span>
+        ) : projectState.dirty ? (
+          <span className="dirty-indicator">{project.name.trim() ? 'Neuloženo' : 'Neuloženo (vyplňte název)'}</span>
+        ) : projectState.lastSavedAt ? (
+          <span className="saved-indicator">
+            Uloženo {projectState.lastSavedAt.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        ) : null}
         <button
           onClick={handleSave}
           className="btn btn-primary btn-small"
@@ -204,7 +274,7 @@ export default function App() {
             onAdd={projectState.addScreen}
             onUpdate={projectState.updateScreen}
             onDuplicate={projectState.duplicateScreen}
-            onRemove={projectState.removeScreen}
+            onRemove={handleRemoveScreen}
           />
         )}
 
@@ -215,7 +285,7 @@ export default function App() {
             definitions={globals.definitions}
             summary={summary}
             onToggle={projectState.toggleItemEnabled}
-            onDeselectAll={projectState.deselectAllItems}
+            onDeselectAll={handleDeselectAll}
             onOverrideMd={projectState.overrideItemMd}
             onResetOverride={(id) => projectState.resetItemOverride(id, globals.definitions, globals.calibration)}
           />
@@ -230,9 +300,25 @@ export default function App() {
             summary={summary}
             settings={globals.settings}
             template={globals.template}
+            onNavigate={(tab) => handleTabChange(tab)}
           />
         )}
       </main>
+
+      {undo && (
+        <div className="undo-toast">
+          {undo.message}
+          <button
+            className="btn btn-small"
+            onClick={() => {
+              undo.restore();
+              setUndo(null);
+            }}
+          >
+            Vrátit
+          </button>
+        </div>
+      )}
     </div>
   );
 }
