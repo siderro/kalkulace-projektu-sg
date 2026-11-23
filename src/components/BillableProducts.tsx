@@ -40,7 +40,9 @@ export function BillableProducts({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [onlySelected, setOnlySelected] = useState(false);
-  const selectedCount = items.filter((i) => i.enabled).length;
+  // „Vybrané“ = to, co se tiskne do nabídky (zapnuté s nenulovou cenou)
+  const isSelected = (i: ProjectBillableItem) => i.enabled && i.price_value > 0;
+  const selectedCount = items.filter(isSelected).length;
 
   const defMap = new Map(definitions.map((d) => [d.id, d]));
 
@@ -60,7 +62,7 @@ export function BillableProducts({
   function renderSection(sectionKey: SectionKey) {
     const sectionItems = items.filter((item) => {
       const def = defMap.get(item.product_definition_id);
-      return def?.section_key === sectionKey && (!onlySelected || item.enabled);
+      return def?.section_key === sectionKey && (!onlySelected || isSelected(item));
     });
 
     if (sectionItems.length === 0) return null;
