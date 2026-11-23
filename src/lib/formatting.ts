@@ -152,6 +152,14 @@ export function formatDuration(startIso: string | null, endIso: string | null): 
  * Generate project code from name.
  * Format: YY-MM-slugified-name-UNIX
  */
+/**
+ * Odpovídá kód projektu názvu? Kód má tvar „yy-mm-slug-čas“.
+ */
+export function projectCodeMatchesName(code: string, name: string): boolean {
+  const slug = slugify(name);
+  return slug === '' ? code === '' : code.slice(6, code.lastIndexOf('-')) === slug;
+}
+
 export function generateProjectCode(name: string): string {
   const now = new Date();
   const yy = String(now.getFullYear()).slice(2);

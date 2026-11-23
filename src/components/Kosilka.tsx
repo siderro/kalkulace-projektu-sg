@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { Project, GlobalSettings } from '../types';
-import { formatCurrency, generateProjectCode } from '../lib/formatting';
+import { formatCurrency, generateProjectCode, projectCodeMatchesName } from '../lib/formatting';
 
 interface Props {
   project: Project;
@@ -15,10 +15,10 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
+      // Nový kód jen když se změnil název (kód obsahuje čas, jinak by se měnil při každém otevření)
+      if (projectCodeMatchesName(project.project_code, project.name)) return;
       const code = generateProjectCode(project.name);
-      if (code && code !== project.project_code) {
-        onUpdate('project_code', code);
-      }
+      if (code) onUpdate('project_code', code);
     }, 3000);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [project.name]);
