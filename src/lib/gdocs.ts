@@ -16,8 +16,6 @@ interface TokenResponse {
 }
 
 interface TokenClient {
-  callback: (response: TokenResponse) => void;
-  error_callback?: (error: { type: string; message?: string }) => void;
   requestAccessToken: (overrides?: { prompt?: string }) => void;
 }
 
@@ -31,6 +29,7 @@ declare global {
             scope: string;
             hint?: string;
             callback: (response: TokenResponse) => void;
+            error_callback: (error: { type: string; message?: string }) => void;
           }) => TokenClient;
         };
       };
@@ -39,7 +38,8 @@ declare global {
 }
 
 let gisLoading: Promise<void> | null = null;
-let tokenClient: TokenClient | null = null;
+// Když Google do minuty neodpoví (okno zablokované nebo nechané otevřené), export se ukončí chybou
+const TOKEN_TIMEOUT_MS = 60_000;
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
 // Knihovnu Google načteme až při prvním použití (aby se nestahovala při každém otevření aplikace)
@@ -68,27 +68,35 @@ function getAccessToken(email: string): Promise<string> {
   if (!window.google?.accounts?.oauth2) {
     return Promise.reject(new Error('Přihlášení Google ještě není načtené, zkuste to znovu.'));
   }
-  if (!tokenClient) {
-    tokenClient = window.google.accounts.oauth2.initTokenClient({
+  const oauth2 = window.google.accounts.oauth2;
+  // Klient se zakládá pro každý požadavek: callbacky musí dostat Google hned při vytvoření
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error('Google neodpověděl. Zkontrolujte, jestli prohlížeč nezablokoval vyskakovací okno.')),
+      TOKEN_TIMEOUT_MS,
+    );
+    const client = oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPE,
       hint: email,
-      callback: () => {},
+      callback: (response) => {
+        clearTimeout(timer);
+        if (response.error) {
+          reject(new Error(response.error_description || response.error));
+          return;
+        }
+        cachedToken = { value: response.access_token, expiresAt: Date.now() + response.expires_in * 1000 };
+        resolve(response.access_token);
+      },
+      error_callback: (error) => {
+        clearTimeout(timer);
+        reject(new Error(
+          error.type === 'popup_closed' ? 'Okno přihlášení Google bylo zavřeno.'
+            : error.type === 'popup_failed_to_open' ? 'Prohlížeč zablokoval okno přihlášení Google – povolte vyskakovací okna pro tuto stránku.'
+            : error.message || error.type,
+        ));
+      },
     });
-  }
-  const client = tokenClient;
-  return new Promise((resolve, reject) => {
-    client.callback = (response) => {
-      if (response.error) {
-        reject(new Error(response.error_description || response.error));
-        return;
-      }
-      cachedToken = { value: response.access_token, expiresAt: Date.now() + response.expires_in * 1000 };
-      resolve(response.access_token);
-    };
-    client.error_callback = (error) => {
-      reject(new Error(error.type === 'popup_closed' ? 'Okno přihlášení Google bylo zavřeno.' : error.message || error.type));
-    };
     client.requestAccessToken({ prompt: '' });
   });
 }
