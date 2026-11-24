@@ -662,6 +662,40 @@ h1, h2, h3, h4, h5, h6 {
 }
 .offer-warnings ul { margin: 4px 0 0; padding-left: 20px; }
 
+.markdown-actions { display: flex; align-items: center; gap: 8px; }
+.view-toggle { display: flex; margin-right: 8px; }
+.view-toggle .btn { border-radius: 0; }
+.view-toggle .btn:first-child { border-radius: 4px 0 0 4px; }
+.view-toggle .btn:last-child { border-radius: 0 4px 4px 0; margin-left: -1px; }
+.btn-toggle-active { background: #e9ecef; font-weight: 600; }
+
+.doc-created, .doc-error {
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.doc-created { background: #d1e7dd; border: 1px solid var(--success); }
+.doc-error { background: #f8d7da; border: 1px solid var(--danger); }
+
+/* Náhled nabídky: přibližně jako v Google Docs */
+.offer-preview {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 32px 48px;
+  max-width: 900px;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.offer-preview h1 { font-size: 24px; margin: 16px 0 8px; }
+.offer-preview h2 { font-size: 19px; margin: 24px 0 8px; }
+.offer-preview h3 { font-size: 16px; margin: 20px 0 6px; }
+.offer-preview table { border-collapse: collapse; margin: 8px 0; }
+.offer-preview th, .offer-preview td { border: 1px solid #bbb; padding: 4px 8px; text-align: left; }
+.offer-preview th { background: #f1f3f4; }
+
 .markdown-output {
   background: var(--surface);
   border: 1px solid var(--border);

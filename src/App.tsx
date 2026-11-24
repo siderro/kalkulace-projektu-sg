@@ -26,7 +26,7 @@ const TAB_LABELS: Record<Tab, string> = {
   kosilka: 'Košilka',
   screens: 'Obrazovky',
   billable: 'Fakturovatelné položky',
-  output: 'Markdown výstup',
+  output: 'Nabídka',
 };
 
 export default function App() {
@@ -303,6 +303,7 @@ export default function App() {
             settings={globals.settings}
             template={globals.template}
             onNavigate={(tab) => handleTabChange(tab)}
+            userEmail={auth.user.email ?? ''}
           />
         )}
       </main>
