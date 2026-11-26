@@ -270,6 +270,9 @@ export default function App() {
         {activeTab === 'screens' && (
           <Screens
             screens={screens}
+            firstMobileSet={project.first_mobile_set}
+            defaultFirstMobileSet={globals.settings.default_first_mobile_set}
+            onUpdateProject={projectState.updateProjectField}
             calibration={globals.calibration}
             onAdd={projectState.addScreen}
             onAddMany={projectState.addScreens}

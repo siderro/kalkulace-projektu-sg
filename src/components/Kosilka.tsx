@@ -134,20 +134,33 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
     <div className="kosilka">
       <h3>Košilka projektu</h3>
 
-      <div className="field field-prominent">
-        <label>
-          Název projektu
-          {project.project_code && (
-            <span className="project-code">{project.project_code}</span>
-          )}
-        </label>
-        <input
-          type="text"
-          value={project.name}
-          onChange={(e) => onUpdate('name', e.target.value)}
-          placeholder="Název projektu..."
-        />
+      {/* Verze a datum verze jsou servisní údaje, proto u názvu */}
+      <div className="kosilka-head">
+        <div className="field field-prominent">
+          <label>
+            Název projektu
+            {project.project_code && (
+              <span className="project-code">{project.project_code}</span>
+            )}
+          </label>
+          <input
+            type="text"
+            value={project.name}
+            onChange={(e) => onUpdate('name', e.target.value)}
+            placeholder="Název projektu..."
+          />
+        </div>
+        {field('Verze', 'version_label')}
+        {field('Datum verze', 'project_date', 'date')}
       </div>
+
+      <section className="kosilka-block">
+        <h4>Termíny</h4>
+        <div className="form-grid">
+          {field('Začátek projektu', 'start_date', 'date')}
+          {field('Konec projektu', 'end_date', 'date')}
+        </div>
+      </section>
 
       <section className="kosilka-block">
         <h4>Klient</h4>
@@ -180,38 +193,6 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
       </section>
 
       <section className="kosilka-block">
-        <h4>Verze a termíny</h4>
-        <div className="form-grid">
-          {field('Verze', 'version_label')}
-          {field('Datum verze', 'project_date', 'date')}
-          {field('Začátek projektu', 'start_date', 'date')}
-          {field('Konec projektu', 'end_date', 'date')}
-        </div>
-      </section>
-
-      <section className="kosilka-block">
-        <h4>Sazby a cena</h4>
-        <div className="form-grid">
-          {field('Hodinová sazba (Kč)', 'hourly_rate', 'number', String(settings.default_hourly_rate), settings.default_hourly_rate)}
-          <div className="field">
-            <label>MD sazba (Kč) <span className="default-hint">hodinová × 8</span></label>
-            <input type="text" value={formatCurrency(mdRate)} disabled className="input-computed" />
-          </div>
-          {field('Koeficient složitosti (%)', 'complexity_coefficient_percent', 'number', '100', 100)}
-          {field('PM procento (%)', 'pm_percent', 'number', String(settings.default_pm_percent), settings.default_pm_percent)}
-          {field('První mobilní sada', 'first_mobile_set', 'checkbox', settings.default_first_mobile_set ? 'ano' : 'ne')}
-        </div>
-      </section>
-
-      <section className="kosilka-block">
-        <h4>Podpora po spuštění</h4>
-        <div className="form-grid">
-          {field('Paušál (Kč/měs.)', 'sla_monthly_fee', 'number', String(settings.default_sla_monthly_fee), settings.default_sla_monthly_fee)}
-          {field('Počet měsíců v ceně', 'sla_months', 'number', '1', 1)}
-        </div>
-      </section>
-
-      <section className="kosilka-block">
         <h4>Texty do nabídky</h4>
         <div className="form-grid form-grid-texts">
           {field('Cíl projektu', 'goal', 'textarea')}
@@ -234,6 +215,27 @@ export function Kosilka({ project, settings, mdRate, onUpdate }: Props) {
             </div>
           )}
           {defaultText('Co nabídka nezahrnuje', 'exclusions_extra', settings.md_exclusions, 6)}
+        </div>
+      </section>
+
+      <section className="kosilka-block">
+        <h4>Podpora po spuštění</h4>
+        <div className="form-grid">
+          {field('Paušál (Kč/měs.)', 'sla_monthly_fee', 'number', String(settings.default_sla_monthly_fee), settings.default_sla_monthly_fee)}
+          {field('Počet měsíců v ceně', 'sla_months', 'number', '1', 1)}
+        </div>
+      </section>
+
+      <section className="kosilka-block">
+        <h4>Sazby a cena</h4>
+        <div className="form-grid">
+          {field('Hodinová sazba (Kč)', 'hourly_rate', 'number', String(settings.default_hourly_rate), settings.default_hourly_rate)}
+          <div className="field">
+            <label>MD sazba (Kč) <span className="default-hint">hodinová × 8</span></label>
+            <input type="text" value={formatCurrency(mdRate)} disabled className="input-computed" />
+          </div>
+          {field('Koeficient složitosti (%)', 'complexity_coefficient_percent', 'number', '100', 100)}
+          {field('PM procento (%)', 'pm_percent', 'number', String(settings.default_pm_percent), settings.default_pm_percent)}
         </div>
       </section>
     </div>

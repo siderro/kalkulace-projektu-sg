@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import type { ProjectScreen, ScreenComplexityCalibration, WorkTypeKey } from '../types';
+import type { Project, ProjectScreen, ScreenComplexityCalibration, WorkTypeKey } from '../types';
 import { COMPLEXITY_PERCENTAGES, WORK_TYPE_LABELS } from '../types';
 import { formatDecimal } from '../lib/formatting';
 
 interface Props {
   screens: ProjectScreen[];
+  firstMobileSet: boolean;
+  defaultFirstMobileSet: boolean;
+  onUpdateProject: (field: keyof Project, value: unknown) => void;
   calibration: ScreenComplexityCalibration[];
   onAdd: () => void;
   onAddMany: (names: string[]) => void;
@@ -51,7 +54,7 @@ function TextCell({ value, onChange, placeholder, className }: {
   );
 }
 
-export function Screens({ screens, calibration, onAdd, onAddMany, onSetFlagForAll, onUpdate, onDuplicate, onRemove }: Props) {
+export function Screens({ screens, firstMobileSet, defaultFirstMobileSet, onUpdateProject, calibration, onAdd, onAddMany, onSetFlagForAll, onUpdate, onDuplicate, onRemove }: Props) {
   // Po přidání obrazovky klávesou Enter přesunout kurzor do jejího názvu
   const nameInputs = useRef(new Map<string, HTMLInputElement>());
   const focusLast = useRef(false);
@@ -126,9 +129,20 @@ export function Screens({ screens, calibration, onAdd, onAddMany, onSetFlagForAl
     <div className="screens-tab">
       <div className="screens-header">
         <h3>Obrazovky</h3>
-        <button onClick={addAndFocus} className="btn btn-primary">
-          + Přidat obrazovku
-        </button>
+        <div className="screens-header-actions">
+          <label className="field-checkbox">
+            <input
+              type="checkbox"
+              checked={firstMobileSet}
+              onChange={(e) => onUpdateProject('first_mobile_set', e.target.checked)}
+            />
+            <span>První mobilní sada</span>
+            <span className="default-hint">(výchozí: {defaultFirstMobileSet ? 'ano' : 'ne'})</span>
+          </label>
+          <button onClick={addAndFocus} className="btn btn-primary">
+            + Přidat obrazovku
+          </button>
+        </div>
       </div>
 
       {screens.length === 0 ? (

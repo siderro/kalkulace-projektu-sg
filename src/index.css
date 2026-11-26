@@ -323,7 +323,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .field label {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-muted);
 }
 
@@ -331,6 +331,15 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 16px;
   max-width: 1200px;
 }
+.kosilka-head {
+  display: grid;
+  grid-template-columns: 1fr 120px 160px;
+  gap: 12px;
+  align-items: start;
+  max-width: 1200px;
+  margin-bottom: 16px;
+}
+.kosilka-head .field-prominent { margin-bottom: 0; }
 .project-code {
   font-weight: 400;
   font-size: 11px;
@@ -457,6 +466,8 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 12px;
 }
 .screens-header h3 { margin: 0; }
+.screens-header-actions { display: flex; align-items: center; gap: 16px; }
+.screens-header-actions .field-checkbox { display: flex; font-size: 13px; }
 
 .screens-table-wrapper { overflow-x: auto; }
 
