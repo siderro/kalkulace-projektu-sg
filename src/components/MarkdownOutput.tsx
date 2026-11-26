@@ -9,7 +9,8 @@ import type {
 import type { ProjectSummary } from '../lib/calculations';
 import { generateMarkdown } from '../lib/markdown';
 import { checkOffer, type CheckTab } from '../lib/checks';
-import { offerMarkdownToHtml, offerHtmlDocument } from '../lib/offerHtml';
+import { offerMarkdownToHtml } from '../lib/offerHtml';
+import { offerDocRequests } from '../lib/offerGdoc';
 import { createGoogleDoc, loadGoogleIdentity, type CreatedDoc } from '../lib/gdocs';
 import { formatCzechDate } from '../lib/formatting';
 
@@ -75,12 +76,12 @@ export function MarkdownOutput({
 
   const previewHtml = useMemo(() => offerMarkdownToHtml(markdown), [markdown]);
 
-  // Každý export založí nový dokument, existující se nikdy nepřepisuje
+  // Každý export založí nový dokument ve složce nabídek, existující se nikdy nepřepisuje
   async function handleCreateDoc() {
-    const name = `Nabídka – ${project.name || 'bez názvu'} – ${project.version_label} (${formatCzechDate(project.project_date)})`;
+    const name = `Cenová nabídka – ${project.name || 'bez názvu'} - Verze ${project.version_label} | ${formatCzechDate(project.project_date)}`;
     setDocState({ creating: true, error: '', doc: null });
     try {
-      const doc = await createGoogleDoc(offerHtmlDocument(markdown, name), name, userEmail);
+      const doc = await createGoogleDoc(name, userEmail, (at) => offerDocRequests(markdown, at));
       setDocState({ creating: false, error: '', doc });
       window.open(doc.url, '_blank', 'noopener');
     } catch (e) {
@@ -129,7 +130,7 @@ export function MarkdownOutput({
       </div>
       {docState.doc && (
         <div className="doc-created">
-          Dokument je založený ve vašem Google Disku:{' '}
+          Dokument je založený ve složce 3. Cost Estimate:{' '}
           <a href={docState.doc.url} target="_blank" rel="noopener noreferrer">otevřít Google Doc</a>
         </div>
       )}

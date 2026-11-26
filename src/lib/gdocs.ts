@@ -1,11 +1,16 @@
 // ============================================================
-// Založení Google Docu s nabídkou v Disku přihlášeného uživatele
-// Token přes Google Identity Services (jen v prohlížeči, scope drive.file =
-// aplikace vidí jen soubory, které sama založí), upload HTML s konverzí na Google Doc.
+// Založení Google Docu s nabídkou: kopie Šablony ŠG do složky nabídek,
+// řádek {{obsah}} v kopii se nahradí nabídkou (Docs API).
+// Token přes Google Identity Services (jen v prohlížeči). Scope drive: šablona i složka
+// patří sdílenému účtu ŠG, drive.file by k nim aplikaci nepustil.
 // ============================================================
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
-const SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const SCOPE = 'https://www.googleapis.com/auth/drive';
+// Šablona ŠG a složka „3. Cost Estimate“ v Disku účtu Š–G Kancelář
+const TEMPLATE_DOC_ID = '1sOTgjBpLOAPk8gaokmfBFVhPkULsHHzzmR8JKkld7DI';
+const OFFERS_FOLDER_ID = '1i_mkcQf0YX4-GplqEPdJQ00Z9XPv9WAb';
+const CONTENT_MARKER = '{{obsah}}';
 const GIS_SRC = 'https://accounts.google.com/gsi/client';
 
 interface TokenResponse {
@@ -106,22 +111,70 @@ export interface CreatedDoc {
   url: string;
 }
 
-export async function createGoogleDoc(html: string, name: string, email: string): Promise<CreatedDoc> {
-  const token = await getAccessToken(email);
-  const metadata = { name, mimeType: 'application/vnd.google-apps.document' };
-  const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-  form.append('file', new Blob([html], { type: 'text/html' }));
-
-  const res = await fetch(
-    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink',
-    { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form },
-  );
+// Volání Google API s tokenem; chyba se vrátí jako čitelná výjimka
+async function googleFetch(token: string, url: string, body: unknown, what: string) {
+  const res = await fetch(url, {
+    method: body === undefined ? 'GET' : 'POST',
+    headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
   if (res.status === 401) cachedToken = null;
   if (!res.ok) {
     const detail = await res.text();
-    throw new Error(`Google Disk odmítl dokument (${res.status}): ${detail.slice(0, 200)}`);
+    throw new Error(`${what} (${res.status}): ${detail.slice(0, 300)}`);
   }
-  const data = await res.json();
-  return { id: data.id, url: data.webViewLink };
+  return res.json();
+}
+
+interface DocElement {
+  startIndex: number;
+  endIndex: number;
+  paragraph?: { elements: { textRun?: { content: string } }[] };
+}
+
+export async function createGoogleDoc(
+  name: string,
+  email: string,
+  contentRequests: (at: number) => Record<string, unknown>[],
+): Promise<CreatedDoc> {
+  const token = await getAccessToken(email);
+
+  const copy = await googleFetch(
+    token,
+    `https://www.googleapis.com/drive/v3/files/${TEMPLATE_DOC_ID}/copy?supportsAllDrives=true&fields=id,webViewLink`,
+    { name, parents: [OFFERS_FOLDER_ID] },
+    'Nepodařilo se zkopírovat Šablonu ŠG',
+  );
+  const doc = { id: copy.id as string, url: copy.webViewLink as string };
+
+  const content = await googleFetch(
+    token,
+    `https://docs.googleapis.com/v1/documents/${doc.id}`,
+    undefined,
+    'Nepodařilo se načíst kopii šablony',
+  );
+  const elements: DocElement[] = content.body.content;
+  const marker = elements.find((el) =>
+    el.paragraph?.elements.some((e) => e.textRun?.content.includes(CONTENT_MARKER)),
+  );
+  if (!marker) {
+    throw new Error(`V Šabloně ŠG chybí řádek ${CONTENT_MARKER}, dokument ${doc.url} zůstal bez obsahu.`);
+  }
+  const bodyEnd = elements[elements.length - 1].endIndex;
+  const at = marker.startIndex;
+
+  // Smazat značku a vše pod ní (ukázky stylů), zbude poslední prázdný odstavec; do něj se vloží nabídka
+  await googleFetch(
+    token,
+    `https://docs.googleapis.com/v1/documents/${doc.id}:batchUpdate`,
+    {
+      requests: [
+        { deleteContentRange: { range: { startIndex: at, endIndex: bodyEnd - 1 } } },
+        { updateParagraphStyle: { range: { startIndex: at, endIndex: at + 1 }, paragraphStyle: { namedStyleType: 'NORMAL_TEXT' }, fields: 'namedStyleType' } },
+        ...contentRequests(at),
+      ],
+    },
+    `Nepodařilo se vložit nabídku do dokumentu ${doc.url}`,
+  );
+  return doc;
 }
