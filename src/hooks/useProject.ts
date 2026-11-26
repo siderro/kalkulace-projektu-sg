@@ -53,6 +53,7 @@ export interface ProjectState {
   toggleItemEnabled: (id: string) => void;
   deselectAllItems: () => void;
   overrideItemMd: (id: string, newMd: number) => void;
+  updateItemLabel: (id: string, label: string) => void;
   resetItemOverride: (
     id: string,
     definitions: BillableProductDefinition[],
@@ -271,6 +272,13 @@ export function useProject(): ProjectState {
     markDirty();
   }, [markDirty]);
 
+  const updateItemLabel = useCallback((id: string, label: string) => {
+    setBillableItemsState((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, custom_label: label } : item)),
+    );
+    markDirty();
+  }, [markDirty]);
+
   const overrideItemMd = useCallback((id: string, newMd: number) => {
     const currentMdRate = (project?.hourly_rate ?? 0) * 8;
     setBillableItemsState((prev) =>
@@ -396,6 +404,7 @@ export function useProject(): ProjectState {
     toggleItemEnabled,
     deselectAllItems,
     overrideItemMd,
+    updateItemLabel,
     resetItemOverride,
     recalculate,
     save,

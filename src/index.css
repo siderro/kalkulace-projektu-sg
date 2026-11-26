@@ -420,6 +420,7 @@ h1, h2, h3, h4, h5, h6 {
 .input-select { width: 100px; }
 .input-note { color: var(--text-muted); }
 .input-md { width: 70px; }
+.input-label { border-color: var(--border); background: var(--surface); }
 
 /* --- Project list --- */
 

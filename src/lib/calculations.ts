@@ -121,6 +121,7 @@ export function buildBillableItems(
         value_source: existing?.overridden ? 'overridden_manual' : valueSource,
         overridden: existing?.overridden ?? false,
         override_note: existing?.override_note ?? '',
+        custom_label: existing?.custom_label ?? '',
         sort_order: def.sort_order,
       };
     });

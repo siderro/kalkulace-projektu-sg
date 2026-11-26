@@ -77,6 +77,7 @@ export function GlobalSettingsPanel({
       override_allowed: true,
       sort_order: maxSort + 10,
       active: true,
+      custom: false,
     };
     setCatalogView({ mode: 'detail', def: newDef, isNew: true });
   }

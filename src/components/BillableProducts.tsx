@@ -17,6 +17,7 @@ interface Props {
   onToggle: (id: string) => void;
   onDeselectAll: () => void;
   onOverrideMd: (id: string, newMd: number) => void;
+  onUpdateLabel: (id: string, label: string) => void;
   onResetOverride: (id: string) => void;
 }
 
@@ -35,6 +36,7 @@ export function BillableProducts({
   onToggle,
   onDeselectAll,
   onOverrideMd,
+  onUpdateLabel,
   onResetOverride,
 }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -111,7 +113,19 @@ export function BillableProducts({
                       onChange={() => onToggle(item.id)}
                     />
                   </td>
-                  <td>{def.label}</td>
+                  <td>
+                    {def.custom ? (
+                      <input
+                        type="text"
+                        value={item.custom_label}
+                        onChange={(e) => onUpdateLabel(item.id, e.target.value)}
+                        placeholder="Popis vlastní položky…"
+                        className="input-inline input-label"
+                      />
+                    ) : (
+                      def.label
+                    )}
+                  </td>
                   <td className="col-md">
                     {isEditing ? (
                       <input

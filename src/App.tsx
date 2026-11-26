@@ -292,6 +292,7 @@ export default function App() {
             onToggle={projectState.toggleItemEnabled}
             onDeselectAll={handleDeselectAll}
             onOverrideMd={projectState.overrideItemMd}
+            onUpdateLabel={projectState.updateItemLabel}
             onResetOverride={(id) => projectState.resetItemOverride(id, globals.definitions, globals.calibration)}
           />
         )}

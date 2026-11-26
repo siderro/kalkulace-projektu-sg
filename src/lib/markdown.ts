@@ -65,9 +65,13 @@ export function buildTemplateData(input: MarkdownInput): TemplateData {
     computeAdjustedItemPrice(price, project.complexity_coefficient_percent);
 
   // Jen zapnuté položky s nenulovou cenou – odvozené položky bez obrazovek se netisknou
+  // Vlastní položka se tiskne pod popisem zadaným v projektu
   const enabledDefs = billableItems
     .filter((item) => item.enabled && adjusted(item.price_value) > 0)
-    .map((item) => ({ item, def: defMap.get(item.product_definition_id)! }));
+    .map((item) => {
+      const def = defMap.get(item.product_definition_id)!;
+      return { item, def: item.custom_label.trim() ? { ...def, label: item.custom_label.trim() } : def };
+    });
 
   // Etapy: položky seskupené po sekcích, prázdné sekce vynechány
   const stages: Stage[] = SECTION_ORDER.flatMap((key) => {

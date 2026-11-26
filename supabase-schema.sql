@@ -56,7 +56,8 @@ create table billable_product_definitions (
   default_price_mode text not null default 'md_rate',
   override_allowed boolean not null default true,
   sort_order integer not null default 0,
-  active boolean not null default true
+  active boolean not null default true,
+  custom boolean not null default false -- vlastní položka, popis se zadává v projektu
 );
 
 -- Výchozí katalog s zástupnou pracností, skutečné hodnoty se nastavují v aplikaci
@@ -71,6 +72,14 @@ values
   ('vizualni_design', 'UI sekundární (Mobil)', 'derived_from_screens', 'ui_secondary_mobile', false,null, 'md_rate', 210),
   ('programming', 'Webflow', 'derived_from_screens', 'webflow', false,null, 'md_rate', 300),
   ('programming', 'Programování na míru', 'manual', null, false, 1, 'md_rate', 310);
+
+-- Vlastní položka na konci každé sekce (popis se zadává v projektu)
+insert into billable_product_definitions (section_key, label, calculation_type, default_enabled, default_md, default_price_mode, sort_order, custom)
+values
+  ('pruzkum_a_pozice', 'Vlastní položka', 'manual', false, 0.5, 'md_rate', 90, true),
+  ('koncept', 'Vlastní položka', 'manual', false, 0.5, 'md_rate', 190, true),
+  ('vizualni_design', 'Vlastní položka', 'manual', false, 0.5, 'md_rate', 290, true),
+  ('programming', 'Vlastní položka', 'manual', false, 0.5, 'md_rate', 390, true);
 
 -- 4. Projects
 create table projects (
@@ -124,6 +133,7 @@ create table project_billable_items (
   value_source text not null default 'manual_default',
   overridden boolean not null default false,
   override_note text not null default '',
+  custom_label text not null default '', -- popis vlastní položky
   sort_order integer not null default 0
 );
 

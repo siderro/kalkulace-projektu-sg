@@ -41,9 +41,11 @@ export function checkOffer(input: MarkdownInput, markdown: string): OfferWarning
   const defMap = new Map(definitions.map((d) => [d.id, d]));
   const enabled = billableItems.filter((i) => i.enabled && i.price_value > 0);
   if (enabled.length === 0) warn('billable', 'Nabídka nemá žádnou zaškrtnutou položku s cenou.');
+  const noLabel = enabled.filter((i) => defMap.get(i.product_definition_id)?.custom && !i.custom_label.trim());
+  if (noLabel.length > 0) warn('billable', 'Vlastní položka bez popisu – doplňte, co obsahuje.');
   const noDescription = enabled
     .map((i) => defMap.get(i.product_definition_id))
-    .filter((d) => d && !d.description.trim())
+    .filter((d) => d && !d.custom && !d.description.trim())
     .map((d) => d!.label);
   if (noDescription.length > 0) {
     warn('billable', `Položky bez popisu pro klienta (popis se doplňuje v Nastavení → katalog): ${noDescription.join(', ')}.`);

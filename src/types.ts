@@ -61,6 +61,7 @@ export interface BillableProductDefinition {
   override_allowed: boolean;
   sort_order: number;
   active: boolean;
+  custom: boolean; // vlastní položka, popis se zadává v projektu
 }
 
 // --- Projects ---
@@ -128,6 +129,7 @@ export interface ProjectBillableItem {
   value_source: ValueSource;
   overridden: boolean;
   override_note: string;
+  custom_label: string; // popis vlastní položky (prázdné = název z katalogu)
   sort_order: number;
 }
 
