@@ -24,6 +24,7 @@ interface RichText {
 // Markdown nadpis → pojmenovaný styl šablony
 const HEADING_STYLES = ['TITLE', 'HEADING_1', 'HEADING_2', 'HEADING_3', 'HEADING_4', 'HEADING_5'];
 
+const NO_INDENT = { magnitude: 0, unit: 'PT' };
 const HEADER_BACKGROUND = { color: { rgbColor: { red: 0.945, green: 0.953, blue: 0.957 } } };
 
 // Řádkové prvky (tučné, kurzíva, odkaz, zalomení) → text a rozsahy formátu
@@ -93,15 +94,29 @@ function textStyleRequests(rich: RichText, at: number): DocsRequest[] {
   });
 }
 
+// Vložený text přebírá styl, odrážku i formát odstavce, před který se vkládá – vše se proto nastaví výslovně
+// (odebrání odrážky přidá odsazení, proto se odsazení nuluje až po něm)
+function resetParagraphs(start: number, end: number, namedStyleType: string, extra: Record<string, unknown> = {}): DocsRequest[] {
+  const paragraphStyle = { namedStyleType, indentStart: NO_INDENT, indentFirstLine: NO_INDENT, ...extra };
+  return [
+    { deleteParagraphBullets: { range: { startIndex: start, endIndex: end } } },
+    { updateParagraphStyle: { range: { startIndex: start, endIndex: end }, paragraphStyle, fields: Object.keys(paragraphStyle).join(',') } },
+  ];
+}
+
+// Formát textu jen podle pojmenovaného stylu šablony
+function resetText(start: number, end: number): DocsRequest[] {
+  return end > start ? [{ updateTextStyle: { range: { startIndex: start, endIndex: end }, textStyle: {}, fields: '*' } }] : [];
+}
+
 // Odstavce vložené na pozici `at`: text, styl odstavce, zrušení zděděného formátu, tučné úseky
 function paragraphsRequests(paragraphs: RichText[], namedStyleType: string, at: number, bullets?: string): DocsRequest[] {
   const text = paragraphs.map((p) => p.text + '\n').join('');
   const end = at + text.length;
   const requests: DocsRequest[] = [
     { insertText: { location: { index: at }, text } },
-    { updateParagraphStyle: { range: { startIndex: at, endIndex: end }, paragraphStyle: { namedStyleType }, fields: 'namedStyleType' } },
-    // Text jinak přebírá formát okolí, takhle se řídí jen pojmenovaným stylem šablony
-    { updateTextStyle: { range: { startIndex: at, endIndex: end }, textStyle: {}, fields: '*' } },
+    ...resetParagraphs(at, end, namedStyleType),
+    ...resetText(at, end),
   ];
   if (bullets) {
     requests.push({ createParagraphBullets: { range: { startIndex: at, endIndex: end }, bulletPreset: bullets } });
@@ -114,16 +129,18 @@ function paragraphsRequests(paragraphs: RichText[], namedStyleType: string, at: 
   return requests;
 }
 
-// Tabulka vložená na pozici `at`. Docs před tabulku vloží prázdný odstavec, tabulka začíná na at + 1.
+// Tabulka vložená na pozici `at`. Nejdřív čistý prázdný odstavec (tabulka by jinak převzala odsazení
+// odrážek za ní), Docs pak před tabulku vloží další prázdný odstavec, tabulka začíná na at + 1.
 // Buňky se plní od poslední, aby se indexy dřívějších buněk neposouvaly.
 function tableRequests(table: Tokens.Table, at: number): DocsRequest[] {
   const rows = [table.header, ...table.rows];
   const columns = table.header.length;
   const tableStart = at + 1;
   const requests: DocsRequest[] = [
+    { insertText: { location: { index: at }, text: '\n' } },
+    ...resetParagraphs(at, at + 1, 'NORMAL_TEXT'),
     { insertTable: { location: { index: at }, rows: rows.length, columns } },
-    // Prázdný odstavec před tabulkou by jinak převzal styl následujícího bloku (třeba nadpisu)
-    { updateParagraphStyle: { range: { startIndex: at, endIndex: at + 1 }, paragraphStyle: { namedStyleType: 'NORMAL_TEXT' }, fields: 'namedStyleType' } },
+    ...resetParagraphs(at, at + 1, 'NORMAL_TEXT'),
   ];
   for (let r = rows.length - 1; r >= 0; r--) {
     for (let c = columns - 1; c >= 0; c--) {
@@ -131,24 +148,17 @@ function tableRequests(table: Tokens.Table, at: number): DocsRequest[] {
       const rich = inlineText(cell?.tokens, cell?.text ?? '');
       const cellAt = tableStart + 3 + r * (2 * columns + 1) + 2 * c;
       const align = table.align[c];
-      if (align === 'right' || align === 'center') {
-        requests.push({
-          updateParagraphStyle: {
-            range: { startIndex: cellAt, endIndex: cellAt + 1 },
-            paragraphStyle: { alignment: align === 'right' ? 'END' : 'CENTER' },
-            fields: 'alignment',
-          },
-        });
-      }
+      const alignment = align === 'right' ? 'END' : align === 'center' ? 'CENTER' : 'START';
+      requests.push(...resetParagraphs(cellAt, cellAt + 1, 'NORMAL_TEXT', { alignment }));
       if (!rich.text) continue;
       requests.push({ insertText: { location: { index: cellAt }, text: rich.text } });
+      requests.push(...resetText(cellAt, cellAt + rich.text.length));
       if (r === 0) rich.spans.push({ start: 0, end: rich.text.length, bold: true });
       requests.push(...textStyleRequests(rich, cellAt));
     }
   }
   requests.push({
     updateTableCellStyle: {
-      tableStartLocation: { index: tableStart },
       tableRange: { tableCellLocation: { tableStartLocation: { index: tableStart }, rowIndex: 0, columnIndex: 0 }, rowSpan: 1, columnSpan: columns },
       tableCellStyle: { backgroundColor: HEADER_BACKGROUND },
       fields: 'backgroundColor',
